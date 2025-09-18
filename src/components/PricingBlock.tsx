@@ -4,7 +4,8 @@ import "../styles/PricingStyles.css";
 import type { Swiper as SwiperType } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import api_get_package from "../data/api/api_get_package";
+import api_get_package from "../services/api/api_get_package";
+import { navigateToSuccess } from "../utils/navigation";
 
 type TabType = "standard" | "premium";
 
@@ -16,8 +17,19 @@ const PricingBlock = () => {
   const [dataPackage, setDataPackage] = useState<any>([]);
   const swiperRef = useRef<SwiperType | null>(null);
 
-  const handlePayment = (packageId: string) => {
-    alert(`Bắt đầu quá trình thanh toán cho gói: ${packageId}`);
+  const handlePayment = (pkg: any) => {
+    // TODO: chỗ này sau sẽ gọi API thanh toán BE -> trả về orderId
+    // Tạm thời mock orderId để demo
+    const orderId = "ORDER-" + Math.floor(Math.random() * 100000);
+
+    // Điều hướng sang trang thành công
+    navigateToSuccess({
+      orderId,
+      packageName: pkg.name,
+      amount: pkg.price,
+      currency: "VND",
+      paidAt: new Date().toISOString(),
+    });
   };
 
   /*Call API List Package*/
@@ -81,9 +93,9 @@ const PricingBlock = () => {
           swiperRef.current = swiper;
         }}
         onSlideChange={(swiper: SwiperType) => {
-          const activeSlideId = dataPackage[swiper.realIndex]._id;
+          const activeSlideId = dataPackage[swiper.realIndex]?._id;
           setSelectedPackageId(
-            activeSlideId ? activeSlideId : dataPackage[0]._id
+            activeSlideId ? activeSlideId : dataPackage[0]?._id
           );
         }}
       >
@@ -95,27 +107,27 @@ const PricingBlock = () => {
               }`}
               onClick={() => setSelectedPackageId(data._id)}
             >
-              {/* Phần 1: Header - cố định ở trên cùng */}
+              {/* Phần 1: Header */}
               <div className="card-header">
                 <h1 className="package-name">{data.name}</h1>
                 <div className="package-row">
-                  <p className="package-price">{data.price}$/</p>
+                  <p className="package-price">{data.price}₫</p>
                   <p className="package-unit">{data.duration} Ngày</p>
                 </div>
               </div>
               <div className="line-divider"></div>
 
-              {/* Phần 2: Body - khu vực sẽ cuộn */}
+              {/* Phần 2: Body */}
               <div className="card-body-scrollable">
                 <p className="package-description">{data.description}</p>
               </div>
 
-              {/* Phần 3: Nút bấm - cố định ở dưới cùng */}
+              {/* Phần 3: Nút bấm */}
               <div className="card-payment-button">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handlePayment(data._id);
+                    handlePayment(data);
                   }}
                 >
                   Thanh toán
@@ -128,4 +140,5 @@ const PricingBlock = () => {
     </div>
   );
 };
+
 export default PricingBlock;
