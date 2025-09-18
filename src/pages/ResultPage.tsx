@@ -2,11 +2,28 @@
 import React from "react";
 
 export default function ResultPage() {
+  const [params, setParams] = React.useState<Record<string, string>>({});
+
   React.useEffect(() => {
     const url = new URL(window.location.href);
-    const query = Object.fromEntries(url.searchParams.entries());
-    const hash = url.hash?.slice(1) ?? "";
-    console.log("[ResultPage] query:", query, "| hash:", hash);
+
+    // Nếu thiếu result => tự thêm result=oke
+    if (!url.searchParams.get("result")) {
+      url.searchParams.set("result", "Payment Successful");
+      window.history.replaceState(null, "", url.toString());
+    }
+
+    // Lấy toàn bộ query param thành object
+    const queryObj = Object.fromEntries(url.searchParams.entries());
+    setParams(queryObj);
+
+    // Log cho BE/dev xem
+    console.log(
+      "[ResultPage] query:",
+      queryObj,
+      "| hash:",
+      url.hash?.slice(1) ?? ""
+    );
   }, []);
 
   return (
@@ -17,8 +34,6 @@ export default function ResultPage() {
         placeItems: "center",
         fontFamily: "system-ui, -apple-system, Arial",
       }}
-    >
-      <div style={{ fontSize: 24, fontWeight: 700 }}>ok</div>
-    </div>
+    ></div>
   );
 }
