@@ -1,41 +1,50 @@
 // src/utils/navigation.ts
+const RESULT_STATE_KEY = "mb_result_payload";
 
-/** Phát sự kiện URL thay đổi để App biết re-render */
 function notifyUrlChanged() {
-  // 1) phát popstate (một số trình duyệt sẽ ignore, nhưng không sao)
   window.dispatchEvent(new Event("popstate"));
-  // 2) phát thêm custom event ổn định
   window.dispatchEvent(new Event("urlchange"));
 }
 
-/** Điều hướng sang /mbapp/result và giữ lại loginToken + gắn params nếu truyền vào */
-export function navigateToResult(
-  params?: Record<string, string | number | undefined>
-) {
+export type ResultPayload = {
+  ui?: "success" | "none";
+  orderId?: string;
+  packageName?: string;
+  amount?: number | string;
+  currency?: string;
+  paidAt?: string;
+};
+
+export function navigateToResultShort(payload: ResultPayload = { ui: "none" }) {
+  // lưu vào sessionStorage (backup phòng mất history.state)
+  try {
+    sessionStorage.setItem(RESULT_STATE_KEY, JSON.stringify(payload));
+  } catch {}
+
+  // đổi path + đính kèm state (không có query)
   const url = new URL(window.location.href);
-  const q = url.searchParams;
-
-  // giữ lại loginToken (nếu đã có)
-  const loginToken = q.get("loginToken");
-
-  // clear query, set lại loginToken trước
-  url.search = "";
-  if (loginToken) url.searchParams.set("loginToken", loginToken);
-
-  // merge thêm params mới
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v === undefined || v === null) url.searchParams.delete(k);
-      else url.searchParams.set(k, String(v));
-    });
-  }
-
-  // đổi path
   url.pathname = "/mbapp/result";
-
-  // cập nhật URL không reload
-  window.history.replaceState(null, "", url.toString());
-
-  // thông báo cho App
+  window.history.replaceState(
+    { __mb: RESULT_STATE_KEY, payload },
+    "",
+    url.toString()
+  );
   notifyUrlChanged();
+}
+
+/** Utils hỗ trợ ResultPage đọc lại payload */
+export function readResultPayloadFromStorage(): ResultPayload | null {
+  try {
+    const raw = sessionStorage.getItem(RESULT_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function clearResultPayload() {
+  try {
+    sessionStorage.removeItem(RESULT_STATE_KEY);
+  } catch {}
 }

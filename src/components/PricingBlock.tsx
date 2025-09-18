@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 
 import api_get_package from "../services/api/api_get_package";
-import { navigateToResult } from "../utils/navigation";
+import { navigateToResultShort } from "../utils/navigation";
 import { useAuthStore } from "../store/auth";
 
 type TabType = "standard" | "premium";
@@ -36,9 +36,15 @@ const PricingBlock = () => {
   };
 
   const handlePayment = (pkg: PackageItem) => {
-    // chỉ gọi được nếu canPay === true
+    if (!canPay) return guardPayment();
+
+    // TODO: gọi API thanh toán thực tế -> nhận orderId từ BE
     const orderId = "ORDER-" + Math.floor(Math.random() * 100000);
-    navigateToResult({
+
+    // URL ngắn: /mbapp/result
+    // payload đi qua history.state + sessionStorage, UI success hiển thị tại ResultPage
+    navigateToResultShort({
+      ui: "success",
       orderId,
       packageName: pkg.name,
       amount: pkg.price,
