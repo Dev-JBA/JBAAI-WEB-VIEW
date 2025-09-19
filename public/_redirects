@@ -1,3 +1,0 @@
-/mbapp/static/*  /static/:splat  200
-/mbapp/*  /index.html  200
-/*  /index.html  200
