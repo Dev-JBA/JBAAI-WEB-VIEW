@@ -1,0 +1,230 @@
+/* --- Cài đặt chung cho các Block --- */
+.block-section {
+  padding: 40px 20px;
+  text-align: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.block-section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+/* --- Block Giới thiệu --- */
+.hero-section {
+  background-color: #f8f9fa;
+}
+
+.hero-logo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.hero-description {
+  font-size: 1rem;
+  color: #666;
+  max-width: 600px;
+  margin: 20px auto;
+  line-height: 1.6;
+}
+
+/* --- Block Gói Thanh toán (Thiết kế mới) --- */
+.clean-pricing {
+  background-color: #f8f9fa; /* Màu nền xám rất nhạt */
+  padding: 40px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pricing-header {
+  text-align: center;
+}
+
+.clean-pricing .section-title {
+  font-size: 2.2rem;
+}
+
+.clean-pricing .section-subtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  max-width: 400px;
+  margin: 10px auto 0 auto;
+}
+
+/* --- Carousel --- */
+.duration-carousel {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  overflow-x: auto; /* Cho phép cuộn ngang */
+  padding: 10px;
+  margin-bottom: 40px;
+  /* Giúp cuộn mượt hơn trên mobile */
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ẩn thanh cuộn */
+.duration-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Thẻ Thời hạn (1, 6, 12 tháng) --- */
+.duration-card {
+  flex: 0 0 80%; /* Mỗi thẻ chiếm 80% chiều rộng */
+  max-width: 300px;
+  background-color: #ffffff;
+  border: 2px solid #e9ecef;
+  border-radius: 16px;
+  padding: 25px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  scroll-snap-align: center; /* Căn giữa thẻ khi cuộn */
+}
+
+.duration-card.active {
+  border-color: #0066b3;
+  box-shadow: 0 8px 24px rgba(0, 102, 179, 0.15);
+  transform: scale(1.03);
+}
+
+.duration-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.duration-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin: 10px 0 5px 0;
+}
+
+.price-unit {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.duration-per-month {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 20px;
+}
+
+.duration-features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0 0;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.duration-features li {
+  margin-bottom: 10px;
+}
+
+/* --- Nút chọn gói chính --- */
+.package-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.package-selector-button {
+  width: 100%;
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 2px solid #dee2e6;
+  background-color: #ffffff;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.package-selector-button.active {
+  background-color: #0066b3;
+  color: #ffffff;
+  border-color: #0066b3;
+}
+
+/* --- Block Hướng dẫn (Video) --- */
+.video-section {
+  background-color: #343a40;
+}
+
+.video-section .section-title {
+  color: #ffffff;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding-top: 56.25%; /* Tỷ lệ 16:9 */
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* --- Headings --- */
+.head-title {
+  font-family: "Montserrat", sans-serif;
+  animation: slideInLeft 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 30px;
+  font-weight: 800;
+  color: #15156e;
+  text-align: center;
+  letter-spacing: 0.02em;
+  position: relative;
+  transition: color 0.2s;
+  padding-top: 40px;
+}
+
+.head-title::after {
+  content: "";
+  display: block;
+  margin: 5px auto 0 auto;
+  width: 90px;
+  height: 3px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #2a57ca 0%, #a3dbe8 100%);
+  opacity: 0.7;
+}
+
+@media (max-width: 950px) {
+  .head-title {
+    font-size: 1.6rem;
+    padding: 0 8px;
+    text-align: center;
+    padding-top: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .head-title {
+    font-size: 1.2rem;
+    padding-top: 15px;
+  }
+}
