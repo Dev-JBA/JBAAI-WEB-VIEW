@@ -11,10 +11,10 @@ import {
 import IntroductionBlock from "./IntroductionBlock/IntroductionBlock";
 import PricingBlock from "./PricingBlock/PricingBlock";
 import UsageGuideBlock from "./UsageGuideBlock/UsageGuideBlock";
-import ResultPage from "./result";
-import WorkPage from "./work";
-import ContactPage from "./contact";
-import RequireLogin from "./requireLogin";
+import ResultPage from "../Pages/resultPage/result";
+import WorkPage from "../Pages/work";
+import ContactPage from "../Pages/contact";
+import RequireLogin from "../Pages/requirePage/requireLogin";
 
 const MainContent: React.FC = () => {
   return (
@@ -71,7 +71,7 @@ const Main: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/result" element={<ResultPage />} />
+        <Route path="/mbapp/result" element={<ResultPage />} />
         <Route path="/work" element={<WorkPage />} />
         <Route path="/contact" element={<ContactPage />} />
 

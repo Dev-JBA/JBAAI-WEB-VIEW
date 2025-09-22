@@ -9,6 +9,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #ffffff;
   color: #1c1d1f;
+  display: flex;
+  justify-content: center;
 }
 
 body {
