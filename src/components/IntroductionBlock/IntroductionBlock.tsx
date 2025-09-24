@@ -187,7 +187,12 @@ const DetailApp: React.FC = () => {
     <div
       ref={viewportRef}
       className="carousel-viewport"
-      style={{ width: "100%", margin: "0 auto", overflow: "hidden" }}
+      style={{
+        width: "100%",
+        backgroundColor: "transparent",
+        margin: "0 auto",
+        overflow: "hidden",
+      }}
     >
       {/* Track: transform theo px dựa trên index & slideW */}
       <div
@@ -195,6 +200,7 @@ const DetailApp: React.FC = () => {
         style={{
           display: "flex",
           willChange: "transform",
+          backgroundColor: "transparent",
           transform: `translate3d(${-index * slideW}px, 0, 0)`,
           transition: animate ? "transform 420ms ease" : "none",
         }}

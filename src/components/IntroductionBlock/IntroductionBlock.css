@@ -205,7 +205,7 @@ body {
   margin: 0 auto;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
 }
 
 .hero-media {
@@ -283,6 +283,7 @@ body {
 .card-infor {
   width: 100% !important;
   background: #ffffff;
+  border-radius: 18px;
 }
 
 .card-infor-img {
@@ -295,6 +296,7 @@ body {
 span.dot {
   -webkit-transition: all 0.3s cubic-bezier(0.32, 0.74, 0.57, 1);
   transition: all 0.3s cubic-bezier(0.32, 0.74, 0.57, 1);
+  border-radius: 18px;
 }
 
 span.dot.active {
