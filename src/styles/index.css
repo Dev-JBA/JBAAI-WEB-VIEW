@@ -1,12 +1,155 @@
+/* ===== Nền động + spot highlight ===== */
 body {
   margin: 0;
   font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 2 "mảng ánh" màu cố định + gradient động */
+  background:
+    /* Spot 1: xanh/cyan ở vùng trên giữa-trái */ radial-gradient(
+      520px 360px at 40% 22%,
+      rgba(74, 198, 255, 0.35),
+      transparent 60%
+    ),
+    /* Spot 2: tím hồng ở sườn phải */
+      radial-gradient(
+        440px 320px at 86% 55%,
+        rgba(74, 226, 240, 0.28),
+        transparent 65%
+      ),
+    /* Gradient động nền chính */
+      linear-gradient(
+        -45deg,
+        #1f52e0,
+        #e495dd,
+        #6a5aff,
+        #ed99e8,
+        #ff6ec7,
+        #6a5aff,
+        #f5834a
+      );
+  background-size: auto, auto, 400% 400%;
+  animation: gradientShift 10s ease-in-out infinite; /* nhanh hơn */
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+/* App content nổi trên hiệu ứng */
+#root {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 767px;
+  padding: 16px 20px;
+  margin: 0 auto;
+}
+
+/* ===== 3 halo chạy nhanh hơn một nhịp ===== */
+
+/* Halo 1: trắng lớn từ góc trái trên */
+body::before {
+  content: "";
+  position: fixed;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.24),
+    transparent 70%
+  );
+  animation: haloMove1 14s linear infinite alternate; /* 20s -> 14s */
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Halo 2: tím nhạt góc phải dưới */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: -40%;
+  right: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 200, 255, 0.2),
+    transparent 75%
+  );
+  animation: haloMove2 18s linear infinite alternate; /* 28s -> 18s */
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Halo 3: xanh nhạt trung tâm */
+html::before {
+  content: "";
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    circle at center,
+    rgba(120, 200, 255, 0.17),
+    transparent 70%
+  );
+  animation: haloMove3 24s linear infinite alternate; /* 36s -> 24s */
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== Animations ===== */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+@keyframes haloMove1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(15%, 10%) scale(1.3);
+  }
+}
+@keyframes haloMove2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(-10%, -8%) scale(1.25);
+  }
+}
+@keyframes haloMove3 {
+  0% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    transform: translate(-55%, 12%) scale(1.4);
+  }
+}
+
+/* Tôn trọng giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+    background-position: 50% 50%;
+  }
+  body::before,
+  body::after,
+  html::before {
+    animation: none;
+  }
 }

@@ -1,4 +1,9 @@
 :root {
-  --main-color: #3D90D7;
-  --white-color: #FFFFFF;
+  --main-color: #3d90d7;
+  --white-color: #ffffff;
+  --blue-1: #1f52e0;
+  --blue-2: #2e6bff;
+  --indigo: #6a5aff;
+  --violet: #8c5fff;
+  --card: #ffffff;
 }
