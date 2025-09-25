@@ -1,4 +1,3 @@
-/* ===== Nền động + spot highlight ===== */
 body {
   margin: 0;
   font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
@@ -6,39 +5,27 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* 2 "mảng ánh" màu cố định + gradient động */
-  background:
-    /* Spot 1: xanh/cyan ở vùng trên giữa-trái */ radial-gradient(
-      520px 360px at 40% 22%,
-      rgba(74, 198, 255, 0.35),
-      transparent 60%
+  /* Spots + gradient */
+  background: radial-gradient(
+      500px 340px at 30% 20%,
+      rgba(9, 107, 104, 0.35),
+      transparent 65%
     ),
-    /* Spot 2: tím hồng ở sườn phải */
+    /* xanh ngọc */
       radial-gradient(
-        440px 320px at 86% 55%,
-        rgba(74, 226, 240, 0.28),
-        transparent 65%
+        460px 320px at 85% 55%,
+        rgba(172, 171, 184, 0.25),
+        transparent 70%
       ),
-    /* Gradient động nền chính */
-      linear-gradient(
-        -45deg,
-        #1f52e0,
-        #e495dd,
-        #6a5aff,
-        #ed99e8,
-        #6a5aff,
-        #ff6ec7,
-        #6a5aff,
-        #f5834a
-      );
+    /* bạc tím */ linear-gradient(-45deg, #acabb8, #6a6a9c, #22638f, #1e1c66);
+
   background-size: auto, auto, 400% 400%;
-  animation: gradientShift 10s ease-in-out infinite; /* nhanh hơn */
+  animation: gradientShift 8s ease-in-out infinite;
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
-/* App content nổi trên hiệu ứng */
 #root {
   position: relative;
   z-index: 1;
@@ -48,64 +35,80 @@ body {
   margin: 0 auto;
 }
 
-/* ===== 3 halo chạy nhanh hơn một nhịp ===== */
-
-/* Halo 1: trắng lớn từ góc trái trên */
+/* Halo 1: xanh ngọc */
 body::before {
   content: "";
   position: fixed;
-  top: -30%;
-  left: -30%;
-  width: 160%;
-  height: 160%;
+  top: -25%;
+  left: -25%;
+  width: 150%;
+  height: 150%;
   background: radial-gradient(
     circle at center,
-    rgba(255, 255, 255, 0.24),
+    rgba(9, 107, 104, 0.28),
     transparent 70%
   );
-  animation: haloMove1 14s linear infinite alternate; /* 20s -> 14s */
+  animation: haloMove1 8s linear infinite alternate;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Halo 2: tím nhạt góc phải dưới */
+/* Halo 2: bạc tím */
 body::after {
   content: "";
   position: fixed;
-  bottom: -40%;
+  bottom: -35%;
   right: -20%;
   width: 140%;
   height: 140%;
   background: radial-gradient(
     circle at center,
-    rgba(255, 200, 255, 0.2),
+    rgba(172, 171, 184, 0.22),
     transparent 75%
   );
-  animation: haloMove2 18s linear infinite alternate; /* 28s -> 18s */
+  animation: haloMove2 10s linear infinite alternate;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Halo 3: xanh nhạt trung tâm */
+/* Halo 3: xanh đậm */
 html::before {
   content: "";
   position: fixed;
-  top: 20%;
+  top: 25%;
   left: 50%;
   width: 120%;
   height: 120%;
   transform: translateX(-50%);
   background: radial-gradient(
     circle at center,
-    rgba(120, 200, 255, 0.17),
+    rgba(34, 99, 143, 0.2),
     transparent 70%
   );
-  animation: haloMove3 24s linear infinite alternate; /* 36s -> 24s */
+  animation: haloMove3 12s linear infinite alternate;
   z-index: 0;
   pointer-events: none;
 }
 
-/* ===== Animations ===== */
+/* Halo 4: tím hồng (#6A6A9C) */
+html::after {
+  content: "";
+  position: fixed;
+  top: -20%;
+  right: -25%;
+  width: 130%;
+  height: 130%;
+  background: radial-gradient(
+    circle at center,
+    rgba(106, 106, 156, 0.25),
+    transparent 70%
+  );
+  animation: haloMove4 14s linear infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Animations */
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
@@ -141,16 +144,11 @@ html::before {
     transform: translate(-55%, 12%) scale(1.4);
   }
 }
-
-/* Tôn trọng giảm chuyển động */
-@media (prefers-reduced-motion: reduce) {
-  body {
-    animation: none;
-    background-position: 50% 50%;
+@keyframes haloMove4 {
+  0% {
+    transform: translate(0, 0) scale(1);
   }
-  body::before,
-  body::after,
-  html::before {
-    animation: none;
+  100% {
+    transform: translate(-8%, 15%) scale(1.35);
   }
 }
