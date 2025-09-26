@@ -207,10 +207,10 @@ const IntroductionBlock: React.FC = () => {
 
   return (
     <div className="container-introduction">
-      <img src="/logo512.png" alt="JBAAI Logo" className="logo" />
+      {/* <img src="/logo512.png" alt="JBAAI Logo" className="logo" /> */}
 
       {/* SLOGAN ngay dưới logo */}
-      <Slogan text="Sống khỏe chủ động — Hiểu cơ thể trong 60 giây" />
+      {/* <Slogan text="Sống khỏe chủ động — Hiểu cơ thể trong 60 giây" /> */}
 
       {/* --- INTRO HERO --- */}
       <section className="intro-hero" data-reveal="fade-up">
@@ -308,8 +308,8 @@ const AboutUs: React.FC = () => {
 
         <RevealWords baseDelay={80} interval={22} maxDuration={1800}>
           <p className="aboutus-content" data-rw>
-            Được triển khai dưới dạng <b>SaMD</b>, JBAAI hỗ trợ kiểm tra{" "}
-            <b>rPPG không tiếp xúc</b> qua camera của điện thoại/máy tính bảng,
+            Được triển khai dưới dạng <b>SaMD</b>, JBAAI hỗ trợ kiểm tra tại chỗ{" "}
+            <b>(PPG) không tiếp xúc</b> qua camera của điện thoại/máy tính bảng,
             đồng thời theo dõi liên tục qua cảm biến PPG tiếp xúc để nắm bắt sức
             khỏe <b>thời gian thực</b>.
           </p>

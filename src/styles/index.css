@@ -5,73 +5,57 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Spots + gradient */
-  background: radial-gradient(
-      500px 340px at 30% 20%,
-      rgba(9, 107, 104, 0.35),
-      transparent 65%
-    ),
-    /* xanh ngọc */
-      radial-gradient(
-        460px 320px at 85% 55%,
-        rgba(172, 171, 184, 0.25),
-        transparent 70%
-      ),
-    /* bạc tím */ linear-gradient(-45deg, #acabb8, #6a6a9c, #22638f, #1e1c66);
-
-  background-size: auto, auto, 400% 400%;
-  animation: gradientShift 8s ease-in-out infinite;
-  position: relative;
-  overflow-x: hidden;
-  min-height: 100vh;
+  min-height: 100vh; /* min-h-screen */
+  width: 100%; /* w-full */
+  color: #f8fafc; /* text-slate-50 */
+  padding-top: 72px;
+  /* bg-gradient-to-b from-cyan-700 via-teal-800 to-gray-900 */
+  background: linear-gradient(
+    to bottom,
+    #0e7490 0%,
+    /* cyan-700 */ #115e59 50%,
+    /* teal-800 */ #111827 100% /* gray-900 */
+  );
 }
 
-#root {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 767px;
-  padding: 16px 20px;
-  margin: 0 auto;
-}
-
-/* Halo 1: xanh ngọc */
+/* 
+/* Spot 1: ánh xanh ngọc trên trái */
 body::before {
   content: "";
   position: fixed;
-  top: -25%;
-  left: -25%;
-  width: 150%;
-  height: 150%;
-  background: radial-gradient(
-    circle at center,
-    rgba(9, 107, 104, 0.28),
-    transparent 70%
-  );
-  animation: haloMove1 8s linear infinite alternate;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Halo 2: bạc tím */
-body::after {
-  content: "";
-  position: fixed;
-  bottom: -35%;
-  right: -20%;
+  top: -20%;
+  left: -20%;
   width: 140%;
   height: 140%;
   background: radial-gradient(
     circle at center,
-    rgba(172, 171, 184, 0.22),
-    transparent 75%
+    rgba(123, 231, 226, 0.25),
+    transparent 70%
   );
-  animation: haloMove2 10s linear infinite alternate;
+  animation: spotMove1 14s ease-in-out infinite alternate;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Halo 3: xanh đậm */
+/* Spot 2: ánh tím nhạt dưới phải */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: -30%;
+  right: -25%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(
+    circle at center,
+    rgba(172, 171, 184, 0.2),
+    transparent 75%
+  );
+  animation: spotMove2 18s ease-in-out infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Spot 3: ánh xanh lam nhạt trung tâm */
 html::before {
   content: "";
   position: fixed;
@@ -82,73 +66,39 @@ html::before {
   transform: translateX(-50%);
   background: radial-gradient(
     circle at center,
-    rgba(34, 99, 143, 0.2),
+    rgba(100, 170, 255, 0.18),
     transparent 70%
   );
-  animation: haloMove3 12s linear infinite alternate;
+  animation: spotMove3 24s ease-in-out infinite alternate;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Halo 4: tím hồng (#6A6A9C) */
-html::after {
-  content: "";
-  position: fixed;
-  top: -20%;
-  right: -25%;
-  width: 130%;
-  height: 130%;
-  background: radial-gradient(
-    circle at center,
-    rgba(106, 106, 156, 0.25),
-    transparent 70%
-  );
-  animation: haloMove4 14s linear infinite alternate;
-  z-index: 0;
-  pointer-events: none;
+/* Keyframes cho animation */
+
+@keyframes spotMove1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(8%, 10%) scale(1.2);
+  }
 }
 
-/* Animations */
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-@keyframes haloMove1 {
+@keyframes spotMove2 {
   0% {
     transform: translate(0, 0) scale(1);
   }
   100% {
-    transform: translate(15%, 10%) scale(1.3);
+    transform: translate(-8%, -6%) scale(1.25);
   }
 }
-@keyframes haloMove2 {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(-10%, -8%) scale(1.25);
-  }
-}
-@keyframes haloMove3 {
+
+@keyframes spotMove3 {
   0% {
     transform: translate(-50%, 0) scale(1);
   }
   100% {
-    transform: translate(-55%, 12%) scale(1.4);
-  }
-}
-@keyframes haloMove4 {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(-8%, 15%) scale(1.35);
+    transform: translate(-52%, 8%) scale(1.3);
   }
 }

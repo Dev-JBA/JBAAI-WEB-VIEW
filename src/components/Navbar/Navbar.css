@@ -1,0 +1,78 @@
+/* Khung cha: width theo container, căn giữa, cố định trên cùng */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 727px; /* bám theo phần giới thiệu */
+  padding: 10px 16px;
+  background: transparent; /* ban đầu trong suốt */
+  margin: 0 auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  /* Chuyển mượt các thuộc tính nền / blur / shadow */
+  transition: background-color 160ms ease, box-shadow 200ms ease,
+    backdrop-filter 160ms ease;
+}
+
+/* Nội dung dưới navbar: chừa chỗ để không bị che */
+.main-content {
+  padding-top: 80px; /* điều chỉnh theo chiều cao navbar thực tế */
+}
+
+/* Logo */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.navbar-logo .logo {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border-radius: 8px; /* bo 4 góc */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); /* bóng mờ */
+}
+
+/* Nút "Gói dịch vụ" dạng glass */
+.navbar-links {
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background-color 180ms ease, transform 160ms ease;
+}
+
+.navbar-links:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Responsive nhỏ hơn */
+/* @media (max-width: 768px) {
+  .navbar {
+    max-width: 92%;
+    padding: 8px 12px;
+  }
+  .navbar-logo .logo {
+    width: 28px;
+    height: 28px;
+  }
+  .navbar-logo {
+    font-size: 1rem;
+  }
+  .main-content {
+    padding-top: 70px;
+  }
+} */
