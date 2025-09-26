@@ -172,7 +172,7 @@ body {
   }
 }
 
-/* About Section */
+/* giữ nguyên About Section */
 .container-about {
   margin: 28px 0;
   display: grid;
@@ -187,7 +187,6 @@ body {
     align-items: center;
   }
 }
-
 .aboutus-image {
   width: 100%;
   border-radius: var(--radius);
@@ -241,10 +240,11 @@ body {
   width: 100%;
   margin: 10px auto 0;
   overflow: hidden;
-  background: #fff;
+  background: transparent;
   border-radius: var(--radius);
-  border: 1px solid #edf1f6;
-  box-shadow: 0 10px 24px rgba(16, 18, 22, 0.06);
+  border: none;
+  box-shadow: none;
+  position: relative;
 }
 .carousel-track {
   display: flex;
@@ -253,9 +253,8 @@ body {
 }
 .carousel-slide {
   flex: 0 0 100%;
-  padding: 6px 6px 10px;
+  padding: 0; /* fix: bỏ padding để ảnh full */
 }
-
 .hero-card {
   width: 100%;
   border-radius: var(--radius);
@@ -263,7 +262,7 @@ body {
 }
 .hero-media {
   position: relative;
-  aspect-ratio: 16/10;
+  aspect-ratio: 16/9; /* fix: tỉ lệ đúng mock */
   background: #111;
 }
 .hero-media img {
@@ -272,7 +271,6 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.02);
   display: block;
 }
 .hero-overlay {
@@ -288,25 +286,22 @@ body {
 }
 .hero-content {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 14px;
-  text-align: center;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  text-align: left; /* fix: chữ trái */
   color: #fff;
-  padding: 0 8px;
 }
 .hero-title {
   font-family: "Montserrat", sans-serif;
   margin: 0 0 6px;
   font-weight: 800;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  text-transform: none; /* fix: bỏ uppercase */
   line-height: 1.2;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
   font-size: clamp(16px, 4.2vw, 22px);
 }
 .hero-desc {
-  margin: auto;
   font-size: clamp(12px, 3.2vw, 14px);
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.9);
@@ -314,9 +309,27 @@ body {
   font-weight: 500;
 }
 
+/* Progress + Dots */
+.pager {
+  margin: 10px 0 0;
+  text-align: center;
+}
+.progress {
+  width: 160px;
+  height: 6px;
+  margin: 0 auto 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.1);
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  transition: width 0.3s ease;
+}
 .dots {
   text-align: center;
-  margin: 10px 0 0;
 }
 .dot {
   display: inline-block;
@@ -326,12 +339,12 @@ body {
   border-radius: 18px;
   background: #555;
   opacity: 0.5;
-  transition: all 0.28s cubic-bezier(0.32, 0.74, 0.57, 1);
+  transition: all 0.28s ease;
 }
 .dot.active {
   width: 20px;
   border-radius: 8px;
-  background: #333;
+  background: var(--accent, #333);
   opacity: 1;
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -347,6 +360,29 @@ body {
       transform: scale(1.08);
     }
   }
+}
+
+/* Info dưới */
+.below-info {
+  margin-top: 20px;
+  text-align: center;
+  padding: 0 12px;
+}
+.below-title {
+  font-weight: 800;
+  font-size: clamp(20px, 5vw, 32px);
+  margin-bottom: 10px;
+  color: #fff;
+}
+.highlight {
+  color: #4fc3c9;
+}
+.below-desc {
+  max-width: 720px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  font-size: clamp(13px, 3.4vw, 16px);
 }
 
 /* ===== Scroll reveal ===== */

@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
   Navigate,
-  Link,
 } from "react-router-dom";
 
 // Các block/trang sẵn có của bạn:
@@ -17,8 +16,6 @@ import ResultPage from "../Pages/resultPage/result";
 import WorkPage from "../Pages/work";
 import ContactPage from "../Pages/contact";
 import RequireLogin from "../Pages/requirePage/requireLogin";
-
-const SHOW_TOKEN_PANEL = true; // có thể chuyển false khi lên prod
 
 const MainContent: React.FC = () => {
   return (
@@ -51,19 +48,12 @@ const HomeGuard: React.FC = () => {
     };
   }, [search, hash]);
 
-  // JSON payload để log + hiển thị
-  const jsonPayload = useMemo(
-    () => JSON.stringify({ loginToken, hash: cleanHash }, null, 2),
-    [loginToken, cleanHash]
-  );
-
   // Khi có token -> log JSON ra console
   useEffect(() => {
     if (hasToken) {
-      // eslint-disable-next-line no-console
-      console.log(jsonPayload);
+      console.log(JSON.stringify({ loginToken, hash: cleanHash }));
     }
-  }, [hasToken, jsonPayload]);
+  }, [hasToken, loginToken, cleanHash]);
 
   // Điều kiện:
   // 1) Có token và có hash -> Main
@@ -72,84 +62,8 @@ const HomeGuard: React.FC = () => {
   // 4) Có token nhưng không hash -> RequireLogin
   const goMain = (hasToken && hasHash) || (!hasToken && !hasHash);
 
-  // Panel hiển thị JSON (chỉ render khi có token và bật SHOW_TOKEN_PANEL)
-  const [copied, setCopied] = useState(false);
-  const copyJson = async () => {
-    try {
-      await navigator.clipboard.writeText(jsonPayload);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
-  };
-
-  const TokenPanel =
-    hasToken && SHOW_TOKEN_PANEL ? (
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 999,
-          background: "#0f172a",
-          color: "#fff",
-          padding: "12px 12px 0",
-          borderBottom: "1px solid #1f2937",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 8,
-          }}
-        >
-          <strong>loginToken payload</strong>
-          <button
-            onClick={copyJson}
-            style={{
-              padding: "4px 8px",
-              borderRadius: 6,
-              border: "1px solid #334155",
-              background: "transparent",
-              color: "#fff",
-              cursor: "pointer",
-            }}
-            title="Copy JSON"
-          >
-            {copied ? "✓ Copied" : "Copy JSON"}
-          </button>
-          <Link
-            to="/mbapp/result"
-            style={{ marginLeft: "auto", color: "#93c5fd" }}
-          >
-            Tới trang kết quả
-          </Link>
-        </div>
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            margin: 0,
-            padding: 12,
-            background: "#111827",
-            borderRadius: 8,
-            fontSize: 12,
-            lineHeight: 1.4,
-            border: "1px solid #1f2937",
-          }}
-        >
-          {jsonPayload}
-        </pre>
-        <div style={{ height: 12 }} />
-      </div>
-    ) : null;
-
   if (goMain) {
-    return (
-      <>
-        {TokenPanel}
-        <MainContent />
-      </>
-    );
+    return <MainContent />;
   }
 
   return <Navigate to="/require-login" replace />;
@@ -159,10 +73,7 @@ const Main: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Trang kết quả theo URL mới */}
         <Route path="/mbapp/result" element={<ResultPage />} />
-
-        {/* Các trang khác */}
         <Route path="/work" element={<WorkPage />} />
         <Route path="/contact" element={<ContactPage />} />
 

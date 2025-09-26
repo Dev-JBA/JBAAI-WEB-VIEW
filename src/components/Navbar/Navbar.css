@@ -60,9 +60,8 @@
 }
 
 /* Responsive nhỏ hơn */
-/* @media (max-width: 768px) {
+@media (max-width: 768px) {
   .navbar {
-    max-width: 92%;
     padding: 8px 12px;
   }
   .navbar-logo .logo {
@@ -75,4 +74,4 @@
   .main-content {
     padding-top: 70px;
   }
-} */
+}

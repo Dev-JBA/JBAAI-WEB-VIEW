@@ -212,6 +212,10 @@ const IntroductionBlock: React.FC = () => {
       {/* SLOGAN ngay dưới logo */}
       {/* <Slogan text="Sống khỏe chủ động — Hiểu cơ thể trong 60 giây" /> */}
 
+      {/* --- ABOUT --- */}
+      {/* --- CAROUSEL --- */}
+      <DetailApp />
+
       {/* --- INTRO HERO --- */}
       <section className="intro-hero" data-reveal="fade-up">
         <div
@@ -269,9 +273,6 @@ const IntroductionBlock: React.FC = () => {
 
       {/* --- ABOUT --- */}
       <AboutUs />
-
-      {/* --- CAROUSEL --- */}
-      <DetailApp />
     </div>
   );
 };
@@ -319,16 +320,16 @@ const AboutUs: React.FC = () => {
   );
 };
 
-type CardInforProps = {
+type Item = {
   img: string;
   title: string;
   desc: string;
   color: string;
 };
 
-const CardInfor: React.FC<CardInforProps> = ({ img, title, desc }) => {
+const CardInfor: React.FC<Item> = ({ img, title, desc }) => {
   return (
-    <article className="hero-card" data-reveal="fade-up">
+    <div className="hero-card">
       <div className="hero-media">
         <img src={img} alt={title} loading="lazy" />
         <div className="hero-overlay" />
@@ -337,7 +338,7 @@ const CardInfor: React.FC<CardInforProps> = ({ img, title, desc }) => {
           <p className="hero-desc">{desc}</p>
         </div>
       </div>
-    </article>
+    </div>
   );
 };
 
@@ -348,7 +349,7 @@ const DetailApp: React.FC = () => {
   const [slideW, setSlideW] = useState(0);
   const [autoPlay] = useState(true);
 
-  const items = useMemo(
+  const items: Item[] = useMemo(
     () => [
       {
         img: "https://jbabrands.ai/wp-content/uploads/2025/08/s1.jpg",
@@ -383,6 +384,7 @@ const DetailApp: React.FC = () => {
     [items]
   );
 
+  // Resize: lấy chiều rộng viewport để tính translate
   useEffect(() => {
     if (!viewportRef.current) return;
     const el = viewportRef.current;
@@ -394,12 +396,14 @@ const DetailApp: React.FC = () => {
     return () => ro.disconnect();
   }, [slideW]);
 
+  // Autoplay
   useEffect(() => {
     if (!slideW || !autoPlay) return;
     const id = setInterval(() => setIndex((p) => p + 1), 3000);
     return () => clearInterval(id);
   }, [slideW, autoPlay]);
 
+  // Loop vô hạn
   useEffect(() => {
     if (!slideW) return;
     if (index === slides.length - 1) {
@@ -419,40 +423,71 @@ const DetailApp: React.FC = () => {
 
   const activeDot =
     (((index - 1) % items.length) + items.length) % items.length;
+  const progress = ((activeDot + 1) / items.length) * 100;
 
   return (
-    <div ref={viewportRef} className="carousel-viewport" data-reveal="fade-up">
+    <div className="detail-app">
+      {/* SLIDER */}
       <div
-        className="carousel-track"
-        style={{
-          transform: `translate3d(${-index * slideW}px,0,0)`,
-          transition: animate ? "transform 420ms ease" : "none",
-        }}
+        ref={viewportRef}
+        className="carousel-viewport"
+        data-reveal="fade-up"
       >
-        {slides.map((s, i) => (
-          <div key={`${s?.title}-${i}`} className="carousel-slide">
-            <CardInfor
-              img={s.img}
-              title={s.title}
-              desc={s.desc}
-              color={s.color}
-            />
+        <div
+          className="carousel-track"
+          style={{
+            transform: `translate3d(${-index * slideW}px,0,0)`,
+            transition: animate ? "transform 420ms ease" : "none",
+          }}
+        >
+          {slides.map((s, i) => (
+            <div
+              key={`${s?.title}-${i}`}
+              className="carousel-slide"
+              style={{ ["--accent" as any]: s.color }}
+            >
+              <CardInfor
+                img={s.img}
+                title={s.title}
+                desc={s.desc}
+                color={s.color}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Pager: progress + dots */}
+        <div className="pager">
+          <div className="progress">
+            <span className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
-        ))}
+
+          <div className="dots">
+            {items.map((_, i) => (
+              <span
+                key={i}
+                onClick={() => {
+                  setAnimate(true);
+                  setIndex(i + 1);
+                }}
+                className={`dot ${i === activeDot ? "active" : ""}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="dots">
-        {items.map((_, i) => (
-          <span
-            key={i}
-            onClick={() => {
-              setAnimate(true);
-              setIndex(i + 1);
-            }}
-            className={`dot ${i === activeDot ? "active" : ""}`}
-          />
-        ))}
-      </div>
+      {/* THÔNG TIN Ở DƯỚI */}
+      <section className="below-info" data-reveal="fade-up">
+        <h2 className="below-title">
+          Ứng dụng chăm sóc sức khỏe{" "}
+          <span className="highlight">thông minh</span>
+        </h2>
+        <p className="below-desc">
+          Theo dõi sức khỏe theo thời gian thực, phân tích bằng AI và nhận
+          khuyến nghị cá nhân hóa mỗi ngày.
+        </p>
+      </section>
     </div>
   );
 };
