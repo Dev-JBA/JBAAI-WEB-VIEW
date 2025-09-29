@@ -118,6 +118,12 @@ const HomeGuard: React.FC = () => {
           >
             {copied ? "✓ Copied" : "Copy JSON"}
           </button>
+          <Link
+            to="/mbapp/result"
+            style={{ marginLeft: "auto", color: "#93c5fd" }}
+          >
+            Tới trang kết quả
+          </Link>
         </div>
         <pre
           style={{

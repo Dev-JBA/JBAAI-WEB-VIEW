@@ -194,7 +194,7 @@
   animation: slideInLeft 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 30px;
   font-weight: 800;
-  color: #15156e;
+  color: #ffff;
   text-align: center;
   letter-spacing: 0.02em;
   position: relative;
@@ -209,7 +209,7 @@
   width: 90px;
   height: 3px;
   border-radius: 5px;
-  background: linear-gradient(90deg, #2a57ca 0%, #a3dbe8 100%);
+  background: linear-gradient(90deg, #ef601e 0%, #a3dbe8 100%);
   opacity: 0.7;
 }
 

@@ -7,7 +7,7 @@ const UsageGuideBlock = () => {
 
   return (
     <section id="usage" className="usage-guide-app">
-      <h1 className="head-title">HƯỚNG DẪN CÀI ĐẶT &amp; SỬ DỤNG ỨNG DỤNG</h1>
+      <h1 className="head-title">HƯỚNG DẪN CÀI ĐẶT </h1>
 
       <div className="usage-guide-video-wrapper">
         <div className="video-wrapper">
@@ -38,6 +38,7 @@ const UsageGuideBlock = () => {
             />
           )}
         </div>
+        <p>* Video hướng dẫn sử dụng ứng dụng JBAAI</p>
       </div>
 
       <footer

@@ -218,14 +218,6 @@ const IntroductionBlock: React.FC = () => {
 
       {/* --- INTRO HERO --- */}
       <section className="intro-hero" data-reveal="fade-up">
-        <div
-          className="intro-badge"
-          data-reveal="fade-in"
-          style={{ ["--d" as any]: "20ms" }}
-        >
-          AI Health • SaMD
-        </div>
-
         <h1
           className="intro-title"
           data-reveal="fade-up"
@@ -293,7 +285,6 @@ const AboutUs: React.FC = () => {
         data-reveal="fade-up"
         style={{ ["--d" as any]: "80ms" }}
       >
-        <div className="aboutus-label">Giới Thiệu Ứng Dụng</div>
         <h2 className="aboutus-title">Ứng Dụng JBAAI</h2>
 
         <RevealWords baseDelay={60} interval={22} maxDuration={1800}>
@@ -372,7 +363,7 @@ const DetailApp: React.FC = () => {
       {
         img: "https://jbabrands.ai/wp-content/uploads/2025/08/s2.jpg",
         title: "Chứng nhận SaMD",
-        desc: "Công nghệ rPPG hỗ trợ theo dõi nhịp tim, hô hấp, HRV… với tiêu chuẩn y tế.",
+        desc: "Công nghệ PPG hỗ trợ theo dõi nhịp tim, hô hấp, HRV… với tiêu chuẩn y tế.",
         color: "#f7b267",
       },
     ],

@@ -1,14 +1,28 @@
+.usage-guide-app {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.5),
+    rgba(0, 132, 132, 0.7)
+  );
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  color: #ffff;
+  border-radius: 1rem;
+}
+
 /* Khung ôm player, canh giữa và đổ bóng nhẹ */
 .usage-guide-video-wrapper {
   display: flex;
   justify-content: center;
+  align-items: center;
+  flex-direction: column;
   margin-top: 20px;
 }
 
 /* Giữ tỉ lệ 16:9, bo góc, overflow hidden */
 .video-wrapper {
   position: relative;
-  width: 100%;
+  width: 90%;
   max-width: 900px; /* tăng/giảm tùy ý */
   aspect-ratio: 16 / 9;
   border-radius: 16px;
