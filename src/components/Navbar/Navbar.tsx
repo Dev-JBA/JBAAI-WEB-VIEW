@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
 const Navbar = () => {
   const [bgStyle, setBgStyle] = useState<React.CSSProperties>({});
   const ticking = useRef(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const maxBlur = 8; // px
@@ -23,12 +26,9 @@ const Navbar = () => {
         const shadow = t * maxShadow;
 
         setBgStyle({
-          // nền đen trong suốt tăng dần
           backgroundColor: `rgba(0,0,0,${opacity})`,
-          // làm mờ nền sau tăng dần
           backdropFilter: `blur(${blur}px)`,
           WebkitBackdropFilter: `blur(${blur}px)`,
-          // bóng dưới nhẹ dần
           boxShadow: `0 8px 20px rgba(0,0,0,${shadow})`,
         });
 
@@ -41,13 +41,31 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const scrollToPricing = () => {
+    const el = document.getElementById("pricing");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const goPricing = () => {
+    if (location.pathname === "/") {
+      // đang ở Home: cuộn ngay
+      scrollToPricing();
+    } else {
+      // không ở Home: điều hướng về Home và gửi state báo cần cuộn
+      navigate("/", { state: { anchor: "pricing" } });
+      // không cần setTimeout ở đây; cuộn sẽ được thực hiện ở Home
+    }
+  };
+
   return (
     <div className="navbar" style={bgStyle}>
       <div className="navbar-logo">
         <img src="/logo512.png" alt="JBAAI Logo" className="logo" />
         JBAAI
       </div>
-      <div className="navbar-links">Gói dịch vụ</div>
+      <div className="navbar-links" onClick={goPricing}>
+        Gói dịch vụ
+      </div>
     </div>
   );
 };

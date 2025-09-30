@@ -118,8 +118,10 @@ const HomeGuard: React.FC = () => {
           >
             {copied ? "✓ Copied" : "Copy JSON"}
           </button>
+
+          {/* ✅ Giữ nguyên query & hash khi sang /mbapp/result */}
           <Link
-            to="/mbapp/result"
+            to={{ pathname: "/mbapp/result", search, hash }}
             style={{ marginLeft: "auto", color: "#93c5fd" }}
           >
             Tới trang kết quả
@@ -159,7 +161,7 @@ const Main: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Trang kết quả theo URL mới */}
+        {/* Trang kết quả theo URL yêu cầu */}
         <Route path="/mbapp/result" element={<ResultPage />} />
 
         {/* Các trang khác */}

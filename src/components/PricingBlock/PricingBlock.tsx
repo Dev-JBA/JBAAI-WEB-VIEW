@@ -47,7 +47,7 @@ const PricingBlock = () => {
   }, [activeTab]);
 
   return (
-    <div className="pricing-container">
+    <div id="pricing" className="pricing-container">
       <header className="pricing-header">
         <h1 className="head-title">Gói Dịch Vụ</h1>
         <div className="tab-navigator">
