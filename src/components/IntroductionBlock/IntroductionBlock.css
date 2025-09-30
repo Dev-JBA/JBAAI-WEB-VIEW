@@ -15,20 +15,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--ink);
-  display: flex;
-  justify-content: center;
-}
-
-body {
-  max-width: 767px;
-  margin: 0 auto;
-  padding: 16px 20px;
-  align-items: center;
 }
 
 .container-introduction {
   position: relative;
-  width: 100%;
+  width: 80%;
 }
 
 /* Logo */
@@ -560,7 +551,10 @@ body {
     font-size: 12px;
     letter-spacing: 0.14em;
   }
-  .container-introduction {
+  /* .container-introduction {
     padding: 16px;
   }
+  .pricing-container {
+    padding: 60px;
+  } */
 }

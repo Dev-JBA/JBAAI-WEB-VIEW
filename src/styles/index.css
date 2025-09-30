@@ -1,14 +1,50 @@
+/* ===== Tokens / Container ===== */
+/* --- spacing cuối trang --- */
+:root {
+  --container-w: clamp(360px, 92vw, 1160px);
+  --page-bottom-space: clamp(64px, 8vh, 120px); /* <-- thêm biến này */
+}
+
+/* #root đang canh giữa toàn trang – thêm padding-bottom tại đây */
+#root {
+  padding-bottom: max(env(safe-area-inset-bottom), var(--page-bottom-space));
+}
+/* Reset cơ bản + chặn lệch */
+* {
+  box-sizing: border-box;
+}
+html,
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  display: block !important; /* override nếu file khác để flex */
+  overflow-x: hidden;
+}
+
+/* CANH GIỮA TOÀN BỘ APP Ở #root */
+#root {
+  max-width: var(--container-w);
+  margin-inline: auto; /* << canh giữa */
+  padding-inline: clamp(12px, 2.4vw, 28px); /* lề hai bên linh hoạt */
+
+  position: relative;
+  z-index: 1; /* nổi trên các spot */
+}
+
+/* ===== BODY nền gradient + halo như bạn đang dùng ===== */
+body {
   font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  min-height: 100vh; /* min-h-screen */
-  width: 100%; /* w-full */
+  min-height: 100vh;
+  width: 100%;
   color: #f8fafc; /* text-slate-50 */
   padding-top: 72px;
+
   /* bg-gradient-to-b from-cyan-700 via-teal-800 to-gray-900 */
   background: linear-gradient(
     to bottom,
@@ -18,7 +54,6 @@ body {
   );
 }
 
-/* 
 /* Spot 1: ánh xanh ngọc trên trái */
 body::before {
   content: "";
@@ -74,8 +109,7 @@ html::before {
   pointer-events: none;
 }
 
-/* Keyframes cho animation */
-
+/* Keyframes */
 @keyframes spotMove1 {
   0% {
     transform: translate(0, 0) scale(1);
@@ -84,7 +118,6 @@ html::before {
     transform: translate(8%, 10%) scale(1.2);
   }
 }
-
 @keyframes spotMove2 {
   0% {
     transform: translate(0, 0) scale(1);
@@ -93,7 +126,6 @@ html::before {
     transform: translate(-8%, -6%) scale(1.25);
   }
 }
-
 @keyframes spotMove3 {
   0% {
     transform: translate(-50%, 0) scale(1);
@@ -101,4 +133,13 @@ html::before {
   100% {
     transform: translate(-52%, 8%) scale(1.3);
   }
+}
+
+/* Đảm bảo các section lớn theo trục #root */
+.container-introduction,
+.container-about,
+.intro-hero,
+.carousel-viewport {
+  margin-inline: auto;
+  width: 100%;
 }

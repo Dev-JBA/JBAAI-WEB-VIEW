@@ -7,8 +7,8 @@ const Navbar = () => {
 
   useEffect(() => {
     const maxBlur = 8; // px
-    const maxShadow = 0.35; // opacity
-    const maxOpacity = 0.75; // nền đen trong suốt tối đa
+    const maxShadow = 0.1; // opacity
+    const maxOpacity = 0.3; // nền đen trong suốt tối đa
     const ramp = 220; // scroll (px) để đạt tối đa
 
     const onScroll = () => {
