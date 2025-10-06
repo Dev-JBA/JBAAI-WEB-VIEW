@@ -103,6 +103,7 @@ const GlobalTokenCatcher: React.FC = () => {
     (async () => {
       try {
         const verified = await verifyToken(loginToken, ac.signal);
+        console.log("[verifyToken] server returned:", verified);
         setVerifiedToken(verified);
 
         const cleaned = stripLoginToken(location);
