@@ -3,26 +3,32 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { verifyToken } from "../data/api/api_verify_token";
 import { setVerifiedToken } from "../data/authStorage";
-import { ApiError } from "../data/apiHelper";
+import { ApiError } from "../data/apiHelper"; // <-- sửa path nếu cần
+
+// helper nhận diện AbortError (cleanup/StrictMode)
+function isAbortError(e: any) {
+  return (
+    e?.name === "AbortError" ||
+    String(e?.message || "")
+      .toLowerCase()
+      .includes("abort")
+  );
+}
 
 function extractLoginToken(location: ReturnType<typeof useLocation>): string {
-  // 1) từ query: ?loginToken=...
   const qs = new URLSearchParams(location.search);
   const q = (qs.get("loginToken") || "").trim();
   if (q) return q;
 
-  // 2) từ hash:
   const rawHash = (location.hash || "").replace(/^#/, "");
   if (!rawHash) return "";
 
-  // 2.a) hash dạng "loginToken=...&..." -> parse trực tiếp
   if (rawHash.includes("loginToken=") && !rawHash.includes("/")) {
     const hp = new URLSearchParams(rawHash);
     const hv = (hp.get("loginToken") || "").trim();
     if (hv) return hv;
   }
 
-  // 2.b) hash dạng "/path?loginToken=...&..." -> lấy phần sau dấu ?
   const qm = rawHash.indexOf("?");
   if (qm >= 0) {
     const afterQ = rawHash.slice(qm + 1);
@@ -31,7 +37,6 @@ function extractLoginToken(location: ReturnType<typeof useLocation>): string {
     if (hv2) return hv2;
   }
 
-  // 2.c) fallback: tìm thô theo regex (phòng khi bị encode kỳ lạ)
   const m = rawHash.match(/(?:^|[?&#])loginToken=([^&#]+)/i);
   if (m && m[1]) {
     try {
@@ -45,14 +50,11 @@ function extractLoginToken(location: ReturnType<typeof useLocation>): string {
 }
 
 function stripLoginToken(location: ReturnType<typeof useLocation>) {
-  // xoá riêng loginToken khỏi query
   const urlParams = new URLSearchParams(location.search);
   urlParams.delete("loginToken");
 
-  // xoá khỏi hash (cả 2 trường hợp 2.a và 2.b ở trên)
   let newHash = (location.hash || "").replace(/^#/, "");
   if (newHash) {
-    // nếu hash có query part
     const qm = newHash.indexOf("?");
     if (qm >= 0) {
       const before = newHash.slice(0, qm);
@@ -62,7 +64,6 @@ function stripLoginToken(location: ReturnType<typeof useLocation>) {
       const qsStr = hashQs.toString();
       newHash = qsStr ? `${before}?${qsStr}` : before;
     } else {
-      // hash kiểu "loginToken=...&..."
       const hp = new URLSearchParams(newHash);
       if (hp.has("loginToken")) {
         hp.delete("loginToken");
@@ -85,7 +86,6 @@ const GlobalTokenCatcher: React.FC = () => {
 
   React.useEffect(() => {
     const loginToken = extractLoginToken(location);
-    // debug nhanh để thấy FE có bắt được token chưa
     console.log(
       "[Catcher] search:",
       location.search,
@@ -105,10 +105,14 @@ const GlobalTokenCatcher: React.FC = () => {
         const verified = await verifyToken(loginToken, ac.signal);
         setVerifiedToken(verified);
 
-        // dọn đúng mỗi loginToken, giữ nguyên các param/hash khác
         const cleaned = stripLoginToken(location);
         navigate(cleaned, { replace: true });
       } catch (e: unknown) {
+        // ⬇️⬇️ Thêm đoạn này để KHÔNG redirect khi bị abort do cleanup/StrictMode
+        if (isAbortError(e)) {
+          console.info("[verifyToken] aborted (ignored)");
+          return;
+        }
         if (e instanceof ApiError) {
           console.error(
             "[verifyToken ApiError]",
