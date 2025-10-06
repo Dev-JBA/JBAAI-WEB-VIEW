@@ -1,5 +1,4 @@
 // src/components/work.jsx
-import React from "react";
 
 const WorkPage = () => {
   return (
