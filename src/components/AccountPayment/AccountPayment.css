@@ -1,0 +1,147 @@
+/* Login component styles: white rounded card centered on gradient background */
+:root {
+    --bg-a: #0fc5b6;
+    --bg-b: #17b6a8;
+}
+
+.login-root {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-frame {
+    width: 420px;
+    max-width: 100%;
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 32px;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
+    box-sizing: border-box;
+}
+
+.login-tabs {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+.tab {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: #0e9468;
+    position: relative;
+}
+
+.tab.active {
+    color: #10a37a;
+    font-weight: 700;
+}
+
+.tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 4px;
+    background: linear-gradient(90deg, #14c6a8, #12b3a1);
+    border-radius: 6px;
+}
+
+.login-card {
+    margin-top: 6px;
+}
+
+.row-misspass {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 40px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.input-label {
+    display: block
+}
+
+.input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid #e6eef0;
+    background: #fbffff;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.row {
+    display: flex
+}
+
+.between {
+    justify-content: space-between;
+    align-items: center
+}
+
+.remember {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    font-size: 14px
+}
+
+.forgot {
+    color: #10a37a;
+    text-decoration: none;
+    font-size: 14px
+}
+
+.primary-button {
+    margin-top: 8px;
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(90deg, #18c4a6, #0fb89a);
+    box-shadow: 0 8px 20px rgba(11, 163, 137, 0.12);
+    margin-bottom: 30px;
+}
+
+.primary-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-error {
+    color: #ef4444;
+    background: #fff5f5;
+    border: 1px solid rgba(239,68,68,0.12);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* small screens adjustments */
+@media (max-width: 520px) {
+    .login-frame {
+        padding: 18px
+    }
+}

@@ -5,6 +5,7 @@ import type { Swiper as SwiperType } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import api_get_package from "../../data/api/api_get_package";
+import { useNavigate } from "react-router-dom";
 
 type TabType = "standard" | "premium";
 
@@ -15,9 +16,16 @@ const PricingBlock = () => {
   );
   const [dataPackage, setDataPackage] = useState<any>([]);
   const swiperRef = useRef<SwiperType | null>(null);
+  const navigate = useNavigate(); 
+
+  // dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
+
 
   const handlePayment = (packageId: string) => {
-    alert(`Bắt đầu quá trình thanh toán cho gói: ${packageId}`);
+    setPendingPackageId(packageId);
+    setShowConfirmDialog(true);
   };
 
   /*Call API List Package*/
@@ -45,6 +53,23 @@ const PricingBlock = () => {
   useEffect(() => {
     callAPIListPackage();
   }, [activeTab]);
+
+  const confirmHasAccount = () => {
+    setShowConfirmDialog(false);
+    navigate("/account-payment", { state: { packageId: pendingPackageId, active: "login" } });
+    setPendingPackageId(null);
+  };
+
+  const confirmNoAccount = () => {
+    setShowConfirmDialog(false);
+    navigate("/account-payment", { state: { packageId: pendingPackageId, active: "signup" } });
+    setPendingPackageId(null);
+  };
+
+  const cancelConfirm = () => {
+    setShowConfirmDialog(false);
+    setPendingPackageId(null);
+  };
 
   return (
     <div id="pricing" className="pricing-container">
@@ -90,9 +115,8 @@ const PricingBlock = () => {
         {dataPackage.map((data: any) => (
           <SwiperSlide key={data._id} className="package-slide">
             <div
-              className={`package-card ${
-                selectedPackageId === data._id ? "active" : ""
-              }`}
+              className={`package-card ${selectedPackageId === data._id ? "active" : ""
+                }`}
               onClick={() => setSelectedPackageId(data._id)}
             >
               {/* Phần 1: Header - cố định ở trên cùng */}
@@ -125,6 +149,65 @@ const PricingBlock = () => {
           </SwiperSlide>
         ))}
       </Swiper>
+
+      {showConfirmDialog && (
+        <div
+          className="confirm-overlay"
+          onClick={cancelConfirm}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="confirm-dialog"
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "relative" }}
+
+          >
+            {/* nút X ở góc trên phải */}
+            <button
+              aria-label="Close"
+              onClick={cancelConfirm}
+              style={{
+                position: "absolute",
+                top: -10,
+                right: -10,
+                width: 45,
+                height: 45,
+                borderRadius: "50%",
+                background: "transparent",
+                border: "none",
+                color: "black",
+                fontSize: 20,
+                backgroundColor: "white",
+                cursor: "pointer",
+                padding: 6,
+                lineHeight: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              x
+            </button>
+
+            <img src="/logo192.png" alt="Logo" className="logo" />
+            <h3>Bạn đã có tài khoản JBAAI chưa?</h3>
+            <p>
+              Xác nhận để chuyển đến trang đăng nhập. Nếu chưa có tài khoản, chọn đăng ký.
+            </p>
+            <div className="confirm-actions">
+              <button
+                className="confirm-button primary"
+                onClick={confirmHasAccount}
+              >
+                Đăng nhập
+              </button>
+              <button className="confirm-button" onClick={confirmNoAccount}>
+                Đăng ký
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,8 @@ export const url_get_package_by_type = () =>
 export const url_verify_user = () =>
     `${api_url}/api/merchant/v1/session/verify`;
 
+export const url_api_login = () =>
+    `${api_url}/api/v1/auth/login`;
 
 
 export const MESSAGE_NETWORK_ERROR = "Network Error";
