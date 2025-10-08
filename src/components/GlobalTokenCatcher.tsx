@@ -1,143 +1,147 @@
-// src/components/GlobalTokenCatcher.ts
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { verifyToken } from "../data/api/api_verify_token";
-import { setVerifiedToken } from "../data/authStorage";
-import { ApiError } from "../data/apiHelper"; // <-- sửa path nếu cần
+// src/components/GlobalTokenCatcher.tsx
+import React, { useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { verifyToken } from "../data/api/api_verify_token"; // giữ nguyên theo dự án của bạn
+import { clearSession, isVerified, setSession } from "../data/authStorage";
 
-// helper nhận diện AbortError (cleanup/StrictMode)
-function isAbortError(e: any) {
-  return (
-    e?.name === "AbortError" ||
-    String(e?.message || "")
-      .toLowerCase()
-      .includes("abort")
-  );
+/**
+ * Khóa chống gọi lặp do StrictMode / remount
+ * và đánh dấu token đã dùng (token one-time).
+ */
+const LOCK_KEY = "MB_VERIFY_LOCK";
+const USED_PREFIX = "MB_TOKEN_USED:";
+
+/* Lock helpers */
+function setLock(on: boolean) {
+  try {
+    if (on) sessionStorage.setItem(LOCK_KEY, "1");
+    else sessionStorage.removeItem(LOCK_KEY);
+  } catch {}
+}
+function hasLock() {
+  try {
+    return sessionStorage.getItem(LOCK_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
-function extractLoginToken(location: ReturnType<typeof useLocation>): string {
-  const qs = new URLSearchParams(location.search);
-  const q = (qs.get("loginToken") || "").trim();
-  if (q) return q;
-
-  const rawHash = (location.hash || "").replace(/^#/, "");
-  if (!rawHash) return "";
-
-  if (rawHash.includes("loginToken=") && !rawHash.includes("/")) {
-    const hp = new URLSearchParams(rawHash);
-    const hv = (hp.get("loginToken") || "").trim();
-    if (hv) return hv;
-  }
-
-  const qm = rawHash.indexOf("?");
-  if (qm >= 0) {
-    const afterQ = rawHash.slice(qm + 1);
-    const hp2 = new URLSearchParams(afterQ);
-    const hv2 = (hp2.get("loginToken") || "").trim();
-    if (hv2) return hv2;
-  }
-
-  const m = rawHash.match(/(?:^|[?&#])loginToken=([^&#]+)/i);
-  if (m && m[1]) {
-    try {
-      return decodeURIComponent(m[1]).trim();
-    } catch {
-      return m[1].trim();
-    }
-  }
-
-  return "";
+/* Token-used helpers */
+function markTokenUsed(token: string) {
+  try {
+    sessionStorage.setItem(USED_PREFIX + token, String(Date.now()));
+  } catch {}
 }
-
-function stripLoginToken(location: ReturnType<typeof useLocation>) {
-  const urlParams = new URLSearchParams(location.search);
-  urlParams.delete("loginToken");
-
-  let newHash = (location.hash || "").replace(/^#/, "");
-  if (newHash) {
-    const qm = newHash.indexOf("?");
-    if (qm >= 0) {
-      const before = newHash.slice(0, qm);
-      const after = newHash.slice(qm + 1);
-      const hashQs = new URLSearchParams(after);
-      hashQs.delete("loginToken");
-      const qsStr = hashQs.toString();
-      newHash = qsStr ? `${before}?${qsStr}` : before;
-    } else {
-      const hp = new URLSearchParams(newHash);
-      if (hp.has("loginToken")) {
-        hp.delete("loginToken");
-        newHash = hp.toString();
-      }
-    }
+function isTokenUsed(token: string) {
+  try {
+    return !!sessionStorage.getItem(USED_PREFIX + token);
+  } catch {
+    return false;
   }
-
-  return {
-    pathname: location.pathname,
-    search: urlParams.toString() ? `?${urlParams.toString()}` : "",
-    hash: newHash ? `#${newHash}` : "",
-  };
 }
 
 const GlobalTokenCatcher: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const runningRef = React.useRef(false);
+  const { search, hash } = useLocation();
 
-  React.useEffect(() => {
-    const loginToken = extractLoginToken(location);
-    console.log(
-      "[Catcher] search:",
-      location.search,
-      "hash:",
-      location.hash,
-      "extracted:",
-      loginToken
-    );
+  // BẮT BUỘC hash theo yêu cầu của bạn
+  const REQUIRE_HASH = true;
 
-    if (!loginToken || runningRef.current) return;
+  const { loginToken, hasToken, cleanHash, hasHash } = useMemo(() => {
+    const params = new URLSearchParams(search || "");
+    const token = (
+      params.get("loginToken") ||
+      params.get("token") ||
+      ""
+    ).trim();
+    const tokenExists = token.length > 0;
 
-    runningRef.current = true;
-    const ac = new AbortController();
+    const hasHashFlag = !!hash && hash.length > 1; // "#MBAPP" -> true
+    const normalizedHash = hasHashFlag ? hash.slice(1) : "";
+
+    return {
+      loginToken: token,
+      hasToken: tokenExists,
+      cleanHash: normalizedHash,
+      hasHash: hasHashFlag,
+    };
+  }, [search, hash]);
+
+  // Controller/Key theo token|hash: chỉ abort khi token đổi (không abort trong cleanup)
+  const ctrlRef = useRef<AbortController | null>(null);
+  const keyRef = useRef<string>("");
+
+  useEffect(() => {
+    // Chỉ coi là "có token đến" khi đạt rule: bắt buộc có hash
+    const hasIncomingToken = hasToken && (!REQUIRE_HASH || hasHash);
+
+    // 1) Nếu KHÔNG có token đến -> KHÔNG làm gì (đặc biệt: KHÔNG clear session)
+    if (!hasIncomingToken) return;
+
+    // 2) Đã verified rồi, hoặc token đã dùng, hoặc đang có lock -> bỏ qua
+    if (isVerified() || isTokenUsed(loginToken) || hasLock()) return;
+
+    // 3) Chuẩn bị verify
+    const key = `${loginToken}|${cleanHash}`;
+
+    // Nếu đang có request cũ và token thay đổi -> abort request cũ
+    if (ctrlRef.current && keyRef.current && keyRef.current !== key) {
+      try {
+        ctrlRef.current.abort();
+      } catch {}
+      ctrlRef.current = null;
+    }
+
+    setLock(true);
+    markTokenUsed(loginToken);
+
+    const controller = new AbortController();
+    ctrlRef.current = controller;
+    keyRef.current = key;
 
     (async () => {
       try {
-        const verified = await verifyToken(loginToken, ac.signal);
-        console.log("[verifyToken] server returned:", verified);
-        setVerifiedToken(verified);
+        console.log("[Catcher] extracted =", loginToken);
+        const s = await verifyToken(loginToken, controller.signal, cleanHash);
 
-        const cleaned = stripLoginToken(location);
-        navigate(cleaned, { replace: true });
-      } catch (e: unknown) {
-        // ⬇️⬇️ Thêm đoạn này để KHÔNG redirect khi bị abort do cleanup/StrictMode
-        if (isAbortError(e)) {
-          console.info("[verifyToken] aborted (ignored)");
-          return;
-        }
-        if (e instanceof ApiError) {
-          console.error(
-            "[verifyToken ApiError]",
-            e.status,
-            e.message,
-            e.details ?? ""
+        // Lưu session vào storage/app state của bạn
+        setSession(s); // (setSession nên phát 'mb:verified' nếu bạn đã cài)
+
+        // Chuẩn hoá dữ liệu verify để lấy sessionId/cif
+        // BE có thể trả { data: {...} } hoặc trả object phẳng
+        const raw: any = (s as any)?.data ?? s;
+
+        // Tìm sessionId & cif ở các vị trí thường gặp
+        const sessionId: string =
+          raw?.sessionId ?? raw?.user?.sessionId ?? raw?.accessToken ?? "";
+
+        const cif: string = raw?.cif ?? raw?.user?.cif ?? "";
+
+        // Log & lưu localStorage cho /payment dùng
+        console.log("[verify-token] raw =", raw, "typeof:", typeof raw);
+        if (sessionId || cif) {
+          localStorage.setItem(
+            "mb_verify_profile",
+            JSON.stringify({ sessionId, cif })
           );
-        } else {
-          console.error("[verifyToken Error]", e);
         }
-        navigate("/require-login", {
-          replace: true,
-          state: {
-            message:
-              "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
-          },
-        });
+
+        console.log("[Catcher] verify OK:", s);
+      } catch (e: any) {
+        if (e?.code === "ERR_CANCELED") {
+          console.warn("[Catcher] request canceled (token changed)");
+        } else {
+          console.error("[Catcher] verify failed:", e);
+          // Chỉ clear khi verify THẤT BẠI thực sự
+          clearSession();
+        }
       } finally {
-        runningRef.current = false;
+        setLock(false);
       }
     })();
 
-    return () => ac.abort();
-  }, [location, navigate]);
+    // ❗ KHÔNG abort trong cleanup để tránh StrictMode cancel lần mount đầu
+    return () => {};
+  }, [hasToken, hasHash, loginToken, cleanHash]);
 
   return null;
 };

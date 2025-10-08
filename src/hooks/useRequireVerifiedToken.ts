@@ -1,57 +1,79 @@
 // src/hooks/useRequireVerifiedToken.ts
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getVerifiedToken } from "../data/authStorage";
+import { getSession, isVerified } from "../data/authStorage";
 
-type Opts = { graceMs?: number }; // thời gian đợi catcher verify nếu URL có loginToken
+/**
+ * Hook chỉ đọc trạng thái do GlobalTokenCatcher set.
+ * KHÔNG tự verify, KHÔNG kích hoạt double-call.
+ */
+type Opts = { graceMs?: number };
 
 export function useRequireVerifiedToken(opts: Opts = {}) {
-  const { graceMs = 600 } = opts;
+  const { graceMs = 1200 } = opts; // kéo dài 1.2s cho chắc
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [token, setToken] = React.useState<string | null>(null);
   const [checking, setChecking] = React.useState(true);
+  const [ok, setOk] = React.useState(false);
+
+  // Có loginToken đang tới qua URL?
+  const hasIncomingToken = React.useMemo(() => {
+    const q = location.search || "";
+    const h = location.hash || "";
+    return /(?:^|[?&#])loginToken=/.test(q + h);
+  }, [location.search, location.hash]);
 
   React.useEffect(() => {
     let cancelled = false;
-    const hasIncomingToken = /loginToken=/.test(
-      location.search + location.hash
-    );
+    let tid: number | undefined;
 
-    const done = (t: string | null) => {
+    const decide = () => {
       if (cancelled) return;
-      setToken(t);
+
+      const verified = isVerified();
+      const session = getSession();
+
+      // Đúng chuẩn: đã verified và có sessionId
+      if (verified && session?.sessionId) {
+        setOk(true);
+        setChecking(false);
+        return;
+      }
+
+      // Chưa verified nhưng có token đến qua URL: chờ thêm (grace)
+      if (hasIncomingToken) {
+        tid = window.setTimeout(() => {
+          // thử đọc lại sau grace
+          const v2 = isVerified();
+          const s2 = getSession();
+          if (v2 && s2?.sessionId) {
+            setOk(true);
+          } else {
+            setOk(false);
+          }
+          setChecking(false);
+        }, graceMs) as unknown as number;
+        return;
+      }
+
+      // Không có token đến, chưa verified => điều hướng login
+      setOk(false);
       setChecking(false);
+      navigate("/require-login", {
+        replace: true,
+        state: { message: "Bạn cần đăng nhập để tiếp tục." },
+      });
     };
 
-    // 1) đã có token trong storage -> pass
-    const t = getVerifiedToken();
-    if (t) return done(t);
-
-    // 2) chưa có token nhưng URL đang mang loginToken -> đợi catcher verify
-    if (hasIncomingToken) {
-      const id = window.setTimeout(() => {
-        const t2 = getVerifiedToken();
-        done(t2); // nếu catcher đã verify xong, t2 sẽ có; nếu chưa, page cứ render, catcher sẽ điều hướng nếu fail
-      }, graceMs);
-      return () => {
-        cancelled = true;
-        clearTimeout(id);
-      };
-    }
-
-    // 3) không có token & không có loginToken đến -> redirect
-    navigate("/require-login", {
-      replace: true,
-      state: { message: "Bạn cần đăng nhập để tiếp tục." },
-    });
-    done(null);
+    // Quyết định ngay lần đầu; nếu có incoming token thì effect ở trên sẽ chờ grace
+    decide();
 
     return () => {
       cancelled = true;
+      if (tid) clearTimeout(tid);
     };
-  }, [location.search, location.hash, navigate, graceMs]);
+  }, [hasIncomingToken, graceMs, navigate]);
 
-  return { token, checking };
+  return { ok, checking };
 }

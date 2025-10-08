@@ -1,23 +1,49 @@
-export const TOKEN_KEY = "mb_verified_token";
-export const USER_KEY = "jba_user_data";
+// src/data/authStorage.ts
+export interface SessionInfo {
+  sessionId: string;
+  cif: string;
+  fullname: string;
+  [k: string]: any;
+}
 
-export function setVerifiedToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+const SESSION_KEY = "MB_SESSION";
+const VERIFIED_KEY = "MB_TOKEN_VERIFIED";
+
+export function setSession(session: SessionInfo) {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    sessionStorage.setItem(VERIFIED_KEY, "1");
+    // 🔔 phát sự kiện để các component (HomeGuard/RequireLogin) re-render
+    window.dispatchEvent(new CustomEvent("mb:verified"));
+  } catch {}
 }
-export function getVerifiedToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+
+export function getSession(): SessionInfo | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as SessionInfo) : null;
+  } catch {
+    return null;
+  }
 }
-export function clearVerifiedToken() {
-  localStorage.removeItem(TOKEN_KEY);
+
+export function isVerified(): boolean {
+  try {
+    return sessionStorage.getItem(VERIFIED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
-// User data storage (object returned from /api/v1/auth/login)
-export function setUser(data: any) {
-  localStorage.setItem(USER_KEY, JSON.stringify(data));
+
+export function clearSession() {
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(VERIFIED_KEY);
+    // 🔔 phát sự kiện logout
+    window.dispatchEvent(new CustomEvent("mb:logout"));
+  } catch {}
 }
-export function getUser(): any | null {
-  const raw = localStorage.getItem(USER_KEY);
-  return raw ? JSON.parse(raw) : null;
-}
-export function clearUser() {
-  localStorage.removeItem(USER_KEY);
-}
+
+// (nếu bạn còn code cũ)
+export const getUser = getSession;
+export const setUser = setSession;

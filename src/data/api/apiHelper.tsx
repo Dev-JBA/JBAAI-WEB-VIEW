@@ -106,7 +106,6 @@ async function ApiHelper<T = any>(
         }
         if (cfg.params) console.log("Query Params:", cfg.params);
       }
-
       const res: AxiosResponse<T> = await instance.request<T>(cfg);
 
       if (debug) {
