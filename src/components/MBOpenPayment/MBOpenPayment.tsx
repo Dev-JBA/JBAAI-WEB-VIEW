@@ -25,11 +25,17 @@ export default function MBOpenPayment() {
   const navigate = useNavigate();
   const location = useLocation() as any;
 
+  // status:
+  //  - "calling": đang khởi tạo với BE
+  //  - "ready": đã có dữ liệu từ BE, chờ người dùng bấm để mở MB App
+  //  - "sending": đang gửi payload sang MB App
+  //  - "error": lỗi khởi tạo
   const [status, setStatus] = useState<
-    "idle" | "calling" | "opening" | "error"
-  >("idle");
+    "calling" | "ready" | "sending" | "error"
+  >("calling");
   const [err, setErr] = useState("");
-  const [beRes, setBeRes] = useState<any>(null);
+
+  const [beRes, setBeRes] = useState<any>(null); // JSON trả về từ BE
   const [payload, setPayload] = useState<MBPaymentData | null>(null);
 
   const once = useRef(false);
@@ -52,14 +58,17 @@ export default function MBOpenPayment() {
   useEffect(() => {
     const run = async () => {
       try {
+        // B1: gom dữ liệu đầu vào để KHỞI TẠO giao dịch với BE
         const req = buildInitRequest({
           state: location.state,
           search: location.search,
         });
 
+        // B2: gọi BE
         setStatus("calling");
         const rs = await api_create_mb_transaction(req);
 
+        // B3: nhận dữ liệu trả về
         const d = normalizeBeData(rs);
         if (!d || typeof d !== "object") {
           setErr((rs as any)?.message || "Khởi tạo giao dịch thất bại.");
@@ -68,6 +77,7 @@ export default function MBOpenPayment() {
         }
         setBeRes(d);
 
+        // B4: chuẩn bị payload GỬI SANG MB từ CHÍNH dữ liệu BE
         const pld: MBPaymentData = {
           merchant: {
             code: d?.merchant?.code || "UNKNOWN",
@@ -85,8 +95,8 @@ export default function MBOpenPayment() {
         };
         setPayload(pld);
 
-        setStatus("opening");
-        openMBPaymentScreen(pld);
+        // KHÔNG gửi ngay — chờ người dùng bấm nút
+        setStatus("ready");
       } catch (e: any) {
         setErr(e?.message || "Lỗi không xác định.");
         setStatus("error");
@@ -99,18 +109,21 @@ export default function MBOpenPayment() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
-  const resend = () => {
-    if (payload) {
-      setStatus("opening");
-      openMBPaymentScreen(payload);
-    } else {
-      setErr("");
-      setStatus("idle");
-      window.location.reload();
-    }
+  const onProceed = () => {
+    if (!payload) return;
+    setStatus("sending");
+    openMBPaymentScreen(payload); // chỉ gửi khi người dùng bấm
+    // không đổi UI sau đó; MB App sẽ takeover (hoặc ở DEV thì chỉ log)
   };
 
-  // ---- UI LITE (chỉ phần trắng) ----
+  const resendInit = () => {
+    setErr("");
+    setStatus("calling");
+    once.current = false;
+    window.location.reload();
+  };
+
+  // ---- UI trắng, tối giản ----
   const Card = ({ children }: { children: React.ReactNode }) => (
     <div
       style={{
@@ -122,7 +135,6 @@ export default function MBOpenPayment() {
         borderRadius: 12,
         boxShadow: "0 6px 18px rgba(0,0,0,.06)",
         color: "#0f172a",
-        opacity: 1, // đảm bảo không bị mờ
       }}
     >
       {children}
@@ -152,6 +164,7 @@ export default function MBOpenPayment() {
     <Card>
       <h3 style={{ marginTop: 0 }}>Khởi tạo thanh toán</h3>
 
+      {/* Thông tin đầu vào từ trang trước */}
       <div style={{ marginBottom: 16 }}>
         <Row label="Gói" value={pkgId || "-"} />
         <Row label="Mô tả gửi BE" value={initDesc} />
@@ -160,21 +173,27 @@ export default function MBOpenPayment() {
         )}
       </div>
 
+      {/* Trạng thái khởi tạo */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 6 }}>Trạng thái</div>
         {status === "calling" && <div>Đang khởi tạo giao dịch với BE…</div>}
-        {status === "opening" && (
-          <div>Đang mở màn hình thanh toán trên MB App…</div>
+        {status === "ready" && (
+          <div>
+            Đã khởi tạo giao dịch. Vui lòng kiểm tra thông tin bên dưới, sau đó
+            bấm “Thanh toán trên MB App”.
+          </div>
         )}
+        {status === "sending" && <div>Đang gửi thông tin sang MB App…</div>}
         {status === "error" && (
           <div style={{ color: "#b00020" }}>Lỗi: {err}</div>
         )}
       </div>
 
+      {/* Thông tin giao dịch BE trả (hiện trước khi mở MB) */}
       {beRes && (
         <>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>
-            Thông tin giao dịch (từ BE)
+            Thông tin giao dịch
           </div>
           <div>
             <Row label="Transaction ID" value={beRes.transactionId || "-"} />
@@ -210,20 +229,24 @@ export default function MBOpenPayment() {
         </>
       )}
 
+      {/* Nút hành động */}
       <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
         <button
-          onClick={resend}
+          onClick={onProceed}
+          disabled={!payload || status !== "ready"}
           style={{
             padding: "10px 12px",
             borderRadius: 10,
-            border: "1px solid #d8dbe2",
-            background: "#fff",
-            cursor: "pointer",
-            fontWeight: 600,
+            border: "1px solid #16a34a",
+            background: status === "ready" ? "#22c55e" : "#a7f3d0",
+            color: "#064e3b",
+            cursor: status === "ready" ? "pointer" : "not-allowed",
+            fontWeight: 700,
           }}
         >
-          Gửi lại
+          Thanh toán trên MB App
         </button>
+
         <button
           onClick={() => navigate("/", { replace: true })}
           style={{
@@ -237,6 +260,22 @@ export default function MBOpenPayment() {
         >
           Về trang chủ
         </button>
+
+        {status === "error" && (
+          <button
+            onClick={resendInit}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #d8dbe2",
+              background: "#fff",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Thử lại khởi tạo
+          </button>
+        )}
       </div>
     </Card>
   );
