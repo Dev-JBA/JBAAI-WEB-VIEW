@@ -1,9 +1,11 @@
-// src/components/MBOpenPayment/MBOpenPayment.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { buildInitRequest } from "./buildInitRequest";
 import api_create_mb_transaction from "../../data/api/api_create_mb_transaction";
 import { openMBPaymentScreen, MBPaymentData } from "./mbPayment";
+import "./MBOpenPayment.css";
+
+type ViewState = "calling" | "ready" | "sending" | "error";
 
 function normalizeBeData(rs: any) {
   if (!rs) return null;
@@ -25,19 +27,10 @@ export default function MBOpenPayment() {
   const navigate = useNavigate();
   const location = useLocation() as any;
 
-  // status:
-  //  - "calling": đang khởi tạo với BE
-  //  - "ready": đã có dữ liệu từ BE, chờ người dùng bấm để mở MB App
-  //  - "sending": đang gửi payload sang MB App
-  //  - "error": lỗi khởi tạo
-  const [status, setStatus] = useState<
-    "calling" | "ready" | "sending" | "error"
-  >("calling");
+  const [status, setStatus] = useState<ViewState>("calling");
   const [err, setErr] = useState("");
-
-  const [beRes, setBeRes] = useState<any>(null); // JSON trả về từ BE
+  const [beRes, setBeRes] = useState<any>(null);
   const [payload, setPayload] = useState<MBPaymentData | null>(null);
-
   const once = useRef(false);
 
   const { pkgId, initDesc, phone, email } = useMemo(() => {
@@ -58,17 +51,13 @@ export default function MBOpenPayment() {
   useEffect(() => {
     const run = async () => {
       try {
-        // B1: gom dữ liệu đầu vào để KHỞI TẠO giao dịch với BE
         const req = buildInitRequest({
           state: location.state,
           search: location.search,
         });
-
-        // B2: gọi BE
         setStatus("calling");
         const rs = await api_create_mb_transaction(req);
 
-        // B3: nhận dữ liệu trả về
         const d = normalizeBeData(rs);
         if (!d || typeof d !== "object") {
           setErr((rs as any)?.message || "Khởi tạo giao dịch thất bại.");
@@ -77,7 +66,6 @@ export default function MBOpenPayment() {
         }
         setBeRes(d);
 
-        // B4: chuẩn bị payload GỬI SANG MB từ CHÍNH dữ liệu BE
         const pld: MBPaymentData = {
           merchant: {
             code: d?.merchant?.code || "UNKNOWN",
@@ -94,8 +82,6 @@ export default function MBOpenPayment() {
           successMessage: d?.successMessage || undefined,
         };
         setPayload(pld);
-
-        // KHÔNG gửi ngay — chờ người dùng bấm nút
         setStatus("ready");
       } catch (e: any) {
         setErr(e?.message || "Lỗi không xác định.");
@@ -112,8 +98,7 @@ export default function MBOpenPayment() {
   const onProceed = () => {
     if (!payload) return;
     setStatus("sending");
-    openMBPaymentScreen(payload); // chỉ gửi khi người dùng bấm
-    // không đổi UI sau đó; MB App sẽ takeover (hoặc ở DEV thì chỉ log)
+    openMBPaymentScreen(payload);
   };
 
   const resendInit = () => {
@@ -123,160 +108,163 @@ export default function MBOpenPayment() {
     window.location.reload();
   };
 
-  // ---- UI trắng, tối giản ----
-  const Card = ({ children }: { children: React.ReactNode }) => (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: "28px auto",
-        padding: "16px",
-        background: "#fff",
-        border: "1px solid #e6e9ef",
-        borderRadius: 12,
-        boxShadow: "0 6px 18px rgba(0,0,0,.06)",
-        color: "#0f172a",
-      }}
-    >
-      {children}
-    </div>
-  );
-  const Row = ({
-    label,
-    value,
-  }: {
-    label: React.ReactNode;
-    value: React.ReactNode;
-  }) => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "180px 1fr",
-        gap: 12,
-        marginBottom: 8,
-      }}
-    >
-      <div style={{ fontWeight: 700 }}>{label}</div>
-      <div>{value}</div>
-    </div>
-  );
-
   return (
-    <Card>
-      <h3 style={{ marginTop: 0 }}>Khởi tạo thanh toán</h3>
-
-      {/* Thông tin đầu vào từ trang trước */}
-      <div style={{ marginBottom: 16 }}>
-        <Row label="Gói" value={pkgId || "-"} />
-        <Row label="Mô tả gửi BE" value={initDesc} />
-        {(phone || email) && (
-          <Row label="User" value={`${phone || "-"} / ${email || "-"}`} />
-        )}
-      </div>
-
-      {/* Trạng thái khởi tạo */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>Trạng thái</div>
-        {status === "calling" && <div>Đang khởi tạo giao dịch với BE…</div>}
-        {status === "ready" && (
+    <div className="mbp-shell">
+      <div className="mbp-card">
+        <header className="mbp-header">
           <div>
-            Đã khởi tạo giao dịch. Vui lòng kiểm tra thông tin bên dưới, sau đó
-            bấm “Thanh toán trên MB App”.
+            <h1>Xác nhận thông tin thanh toán</h1>
+            <p className="mbp-subtitle">
+              Vui lòng kiểm tra thông tin trước khi chuyển sang thanh toán
+            </p>
           </div>
-        )}
-        {status === "sending" && <div>Đang gửi thông tin sang MB App…</div>}
-        {status === "error" && (
-          <div style={{ color: "#b00020" }}>Lỗi: {err}</div>
-        )}
-      </div>
-
-      {/* Thông tin giao dịch BE trả (hiện trước khi mở MB) */}
-      {beRes && (
-        <>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>
-            Thông tin giao dịch
-          </div>
-          <div>
-            <Row label="Transaction ID" value={beRes.transactionId || "-"} />
-            <Row label="Trạng thái" value={beRes.status || "-"} />
-            <Row label="Số tiền" value={`${fmtAmount(beRes.amount)} (VND)`} />
-            <Row label="CIF" value={beRes.cif || "-"} />
-            <Row label="Mô tả" value={beRes.description || "-"} />
-            <Row label="Thời điểm tạo" value={fmtDT(beRes.createdTime)} />
-            <Row
-              label="Merchant"
-              value={`${beRes?.merchant?.code || "-"} — ${
-                beRes?.merchant?.name || "-"
-              }`}
-            />
-            <Row
-              label="Loại giao dịch"
-              value={`${beRes?.type?.code || "-"} — ${
-                beRes?.type?.name || "-"
-              } · allowCard: ${String(!!beRes?.type?.allowCard)}`}
-            />
-            <Row
-              label="Gói"
-              value={`${beRes?.packageInfo?.id || "-"} — ${
-                beRes?.packageInfo?.name || "-"
-              }${
-                beRes?.packageInfo?.price != null
-                  ? ` (${beRes.packageInfo.price})`
-                  : ""
-              }`}
-            />
-            <Row label="User ID" value={beRes.userId || "-"} />
-          </div>
-        </>
-      )}
-
-      {/* Nút hành động */}
-      <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-        <button
-          onClick={onProceed}
-          disabled={!payload || status !== "ready"}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 10,
-            border: "1px solid #16a34a",
-            background: status === "ready" ? "#22c55e" : "#a7f3d0",
-            color: "#064e3b",
-            cursor: status === "ready" ? "pointer" : "not-allowed",
-            fontWeight: 700,
-          }}
-        >
-          Thanh toán trên MB App
-        </button>
-
-        <button
-          onClick={() => navigate("/", { replace: true })}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 10,
-            border: "1px solid #d8dbe2",
-            background: "#fff",
-            cursor: "pointer",
-            fontWeight: 600,
-          }}
-        >
-          Về trang chủ
-        </button>
-
-        {status === "error" && (
-          <button
-            onClick={resendInit}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #d8dbe2",
-              background: "#fff",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
+          <span
+            className={
+              "mbp-badge " +
+              (status === "calling"
+                ? "is-warn"
+                : status === "ready"
+                ? "is-ok"
+                : status === "sending"
+                ? "is-info"
+                : "is-error")
+            }
           >
-            Thử lại khởi tạo
-          </button>
+            {status === "calling" && "Đang khởi tạo"}
+            {status === "ready" && "Sẵn sàng thanh toán"}
+            {status === "sending" && "Đang gửi sang MB"}
+            {status === "error" && "Lỗi"}
+          </span>
+        </header>
+
+        {/* Input từ màn trước */}
+        <section className="mbp-section">
+          <h3>Thông tin người dùng</h3>
+          <div className="mbp-grid">
+            <div className="mbp-kv">
+              <span className="k">Gói</span>
+              <span className="v mbp-mono">{pkgId || "-"}</span>
+            </div>
+            <div className="mbp-kv full">
+              <span className="k">Mô tả </span>
+              <span className="v">{initDesc}</span>
+            </div>
+            {(phone || email) && (
+              <div className="mbp-kv full">
+                <span className="k">SĐT/Email</span>
+                <span className="v">
+                  {phone || "-"} / {email || "-"}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Trạng thái + CTA */}
+        <section className="mbp-section">
+          <h3>Trạng thái</h3>
+          {status === "calling" && (
+            <p className="mbp-muted">Đang khởi tạo giao dịch với máy chủ…</p>
+          )}
+          {status === "ready" && (
+            <p className="mbp-ok">
+              Đã khởi tạo giao dịch. Nhấn <strong>“xác nhận”</strong> để tiếp
+              tục.
+            </p>
+          )}
+          {status === "sending" && (
+            <p className="mbp-info">Đang gửi thông tin sang MB App…</p>
+          )}
+          {status === "error" && <p className="mbp-error">Lỗi: {err}</p>}
+        </section>
+
+        {/* Tóm tắt giao dịch từ BE */}
+        {beRes && (
+          <section className="mbp-section">
+            <h3>Thông tin giao dịch</h3>
+            <div className="mbp-grid">
+              <div className="mbp-kv">
+                <span className="k">Transaction ID</span>
+                <span className="v mbp-mono">{beRes.transactionId || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Trạng thái</span>
+                <span className="v">{beRes.status || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Số tiền</span>
+                <span className="v">{fmtAmount(beRes.amount)} VND</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">CIF</span>
+                <span className="v mbp-mono">{beRes.cif || "-"}</span>
+              </div>
+              <div className="mbp-kv full">
+                <span className="k">Mô tả</span>
+                <span className="v">{beRes.description || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Tạo lúc</span>
+                <span className="v">{fmtDT(beRes.createdTime)}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Merchant</span>
+                <span className="v">
+                  {beRes?.merchant?.code || "-"} —{" "}
+                  {beRes?.merchant?.name || "-"}
+                </span>
+              </div>
+              <div className="mbp-kv full">
+                <span className="k">Loại giao dịch</span>
+                <span className="v">
+                  {beRes?.type?.code || "-"} — {beRes?.type?.name || "-"}
+                  {" · "}allowCard: {String(!!beRes?.type?.allowCard)}
+                </span>
+              </div>
+              <div className="mbp-kv full">
+                <span className="k">Gói</span>
+                <span className="v">
+                  <span className="mbp-mono">
+                    {beRes?.packageInfo?.id || "-"}
+                  </span>
+                  {" — "}
+                  {beRes?.packageInfo?.name || "-"}
+                  {beRes?.packageInfo?.price != null
+                    ? ` (${beRes.packageInfo.price})`
+                    : ""}
+                </span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">User ID</span>
+                <span className="v mbp-mono">{beRes.userId || "-"}</span>
+              </div>
+            </div>
+          </section>
         )}
+
+        {/* Action bar */}
+        <footer className="mbp-actions">
+          <button
+            className="btn btn-primary"
+            onClick={onProceed}
+            disabled={!payload || status !== "ready"}
+          >
+            Thanh toán
+          </button>
+          <div className="spacer" />
+          <button
+            className="btn"
+            onClick={() => navigate("/", { replace: true })}
+          >
+            Về trang chủ
+          </button>
+          {status === "error" && (
+            <button className="btn" onClick={resendInit}>
+              Thử lại khởi tạo
+            </button>
+          )}
+        </footer>
       </div>
-    </Card>
+    </div>
   );
 }
