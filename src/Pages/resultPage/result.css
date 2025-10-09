@@ -1,0 +1,40 @@
+
+
+.container{
+    display: flex;
+    flex-direction: column;
+}
+.resultContainer{
+    justify-content: center;
+    text-align: center;
+    flex: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 50px;
+}
+
+.detailContainer{
+    border: 1px solid #ccc;
+    width: 100%;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    background-color: rgb(226, 248, 248);
+}
+
+.row{
+    display: flex;
+    font-size: 12px;
+    top: 0;
+    color: black;
+    justify-content: space-between;
+}
+
+.button-bottom {
+    bottom: 0;
+    margin-top: 100px;
+    height: 60px;
+    background-color: #98debd;
+    border-radius: 16px;
+}

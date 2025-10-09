@@ -1,5 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
+import "./result.css";
+import api_get_mb_transaction from "../../data/api/api_get_mb_transaction";
+import images from "../../assets";
 
 type ResultData = {
   success: boolean; // suy luận từ các tham số phổ biến
@@ -84,6 +87,10 @@ const deriveSuccess = (params: URLSearchParams): boolean => {
 
 const ResultPage: React.FC = () => {
   const { search, hash } = useLocation();
+  const [beStatus, setBeStatus] = useState<"unknown" | "success" | "failed" | "pending">("unknown");
+  const [beMessage, setBeMessage] = useState<string>("");
+
+  const [dataTransaction, setDataTransaction] = useState<any>(null);
 
   const data: ResultData = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -95,9 +102,9 @@ const ResultPage: React.FC = () => {
     );
     const { iso: paidAt, raw: rawPaidAt } = toIsoDate(
       params.get("paidAt") ||
-        params.get("time") ||
-        params.get("txnTime") ||
-        params.get("timestamp")
+      params.get("time") ||
+      params.get("txnTime") ||
+      params.get("timestamp")
     );
 
     const success = deriveSuccess(params);
@@ -131,95 +138,98 @@ const ResultPage: React.FC = () => {
     };
   }, [search, hash]);
 
-  // Log toàn bộ payload JSON 1 lần khi vào trang
+
   useEffect(() => {
-    // eslint-disable-next-line no-console
     console.log(JSON.stringify({ page: "result", ...data }));
+
+    // Nếu có transactionId thì gọi BE kiểm tra trạng thái
+    if (data.transactionId) {
+      api_get_mb_transaction(data.transactionId)
+        .then((resp) => {
+          console.log("api_get_mb_transaction resp:", resp);
+          setDataTransaction(resp);
+          if (resp?.success && resp?.data) {
+            // Xác định trạng thái từ BE
+            const status = String(resp.data.status || "").toLowerCase();
+            if (status === "success" || status === "paid" || status === "completed") {
+              setBeStatus("success");
+              setBeMessage(resp.data.message || "Giao dịch thành công");
+            } else if (status === "failed" || status === "error" || status === "cancelled") {
+              setBeStatus("failed");
+              setBeMessage(resp.data.message || "Giao dịch thất bại");
+            } else if (status === "pending") {
+              setBeStatus("pending");
+              setBeMessage(resp.data.message || "Giao dịch đang chờ xử lý");
+            } else {
+              setBeStatus("unknown");
+              setBeMessage(resp.data.message || "Không xác định trạng thái giao dịch");
+            }
+          } else {
+            setBeStatus("unknown");
+            setBeMessage(resp?.message || "Không lấy được trạng thái giao dịch");
+          }
+        })
+        .catch((err) => {
+          setBeStatus("unknown");
+          setBeMessage("Lỗi khi kiểm tra trạng thái giao dịch");
+        });
+    }
   }, [data]);
 
+  const handleButton = () => {
+    console.log("dataTransaction of butotn:", dataTransaction);
+  }
+
+  // Ưu tiên trạng thái BE nếu có
+  const finalSuccess = beStatus === "success" ? true : beStatus === "failed" ? false : data.success;
+  const finalMessage = beMessage || data.message;
+
   return (
-    <div style={{ maxWidth: 720, margin: "24px auto", padding: "16px" }}>
-      {/* Header trạng thái */}
-      <div
-        style={{
-          padding: "16px",
-          borderRadius: 12,
-          background: data.success ? "#DCFCE7" : "#FEE2E2",
-          border: `1px solid ${data.success ? "#16A34A" : "#DC2626"}`,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <div style={{ fontSize: 24 }}>{data.success ? "✅" : "❌"}</div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>
-            {data.success
-              ? "Thanh toán thành công"
-              : "Thanh toán thất bại / không xác định"}
-          </div>
-          {data.message ? (
-            <div style={{ opacity: 0.8 }}>{data.message}</div>
-          ) : null}
+    <div className="container">
+      <div className="resultContainer">
+        <img src={finalSuccess ? images.icon.payment_success : images.icon.payment_failed} alt="Logo" className="logo" />
+        <div style={{ fontWeight: 700, fontSize: 18 }}>
+          {finalSuccess
+            ? "Thanh toán thành công"
+            : "Thanh toán thất bại"}
+        </div>
+        {finalMessage ? (
+          <p style={{ opacity: 0.8 }}>{finalMessage}</p>
+        ) : <p>{dataTransaction?.type.name || "-"} thành công. Cảm ơn quí khách đã lựa chọn sản phẩm</p>}
+        
+      </div>
+      <div className="detailContainer">
+        <div className="row">
+          <h3>Thông tin giao dịch</h3>
+          <p>{dataTransaction?.id || "-"}</p>
+        </div>
+        <hr />
+        <div className="row">
+          <h3>Ngày tạo giao dịch</h3>
+          <p>{dataTransaction?.createdTime || "-"}</p>
+        </div>
+        <hr />
+        <div className="row">
+          <h3>Đối tác</h3>
+          <p>{dataTransaction?.merchant.code || "-"}</p>
+        </div>
+        <hr style={{ margin: "8px 0" }} />
+        <div className="row">
+          <h3>Thông tin giao dịch</h3>
+          <p>{dataTransaction?.merchant.name || "-"}</p>
+        </div>
+        <hr />
+        <div className="row">
+          <h3>Tổng tiền</h3>
+          <p>{dataTransaction?.amount.toLocaleString() || "-"}</p>
+        </div>
+        <hr />
+        <div className="row">
+          <h3>Trạng thái</h3>
+          <p>{dataTransaction?.status || "-"}</p>
         </div>
       </div>
-
-      {/* Thông tin chi tiết */}
-      <div
-        style={{
-          marginTop: 16,
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          backgroundColor: "#ffff",
-          padding: 16,
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>Thông tin giao dịch</h3>
-        <dl
-          style={{
-            display: "grid",
-            gridTemplateColumns: "180px 1fr",
-            rowGap: 8,
-          }}
-        >
-          <dt>Mã đơn hàng</dt>
-          <dd>{data.orderId || "-"}</dd>
-          <dt>Mã giao dịch</dt>
-          <dd>{data.transactionId || "-"}</dd>
-          <dt>Đơn vị chấp nhận</dt>
-          <dd>{data.merchantId || "-"}</dd>
-          <dt>Phương thức</dt>
-          <dd>{data.method || "-"}</dd>
-          <dt>Số tiền</dt>
-          <dd>
-            {data.amount != null ? data.amount.toLocaleString() : "-"}{" "}
-            {data.currency || ""}
-          </dd>
-          <dt>Thời gian thanh toán</dt>
-          <dd>{data.paidAt || data.rawPaidAt || "-"}</dd>
-          <dt>Trạng thái</dt>
-          <dd>{data.status || (data.success ? "success" : "-")}</dd>
-          <dt>Mã phản hồi</dt>
-          <dd>{data.code || "-"}</dd>
-          <dt>Hash (fragment)</dt>
-          <dd>{data.hash || "-"}</dd>
-        </dl>
-      </div>
-
-      {/* Về trang chủ */}
-      <div style={{ marginTop: 16, textAlign: "center" }}>
-        <Link to="/">Về trang chủ</Link>
-      </div>
-
-      {/* Gợi ý test */}
-      <div style={{ marginTop: 16, fontSize: 12, opacity: 0.75 }}>
-        <div>
-          <b>Ví dụ test:</b>
-        </div>
-        <div>
-          /result?code=00&status=success&orderId=ORD123&transactionId=TXN999&amount=150000&currency=VND&paidAt=2025-09-19T10:00:00Z#ABCEDF
-        </div>
-      </div>
+      <button className="button-bottom" onClick={() => {}}><Link to="/" style={{ color: "black", textDecoration: "none" }}>Về trang chủ</Link></button>
     </div>
   );
 };
