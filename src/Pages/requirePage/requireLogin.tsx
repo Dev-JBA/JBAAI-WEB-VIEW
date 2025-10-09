@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 
-const COUNTDOWN_SECS = 4; // thời gian đếm ngược trước khi chuyển trang
+const COUNTDOWN_SECS = 4; // thời gian đếm ngược
 
 const RequireLogin: React.FC = () => {
   const location = useLocation() as { state?: { message?: string } };
@@ -18,7 +18,6 @@ const RequireLogin: React.FC = () => {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    // Đếm ngược rồi chuyển hướng
     const t = setInterval(() => {
       setSeconds((s) => {
         if (s <= 1) {
@@ -36,38 +35,33 @@ const RequireLogin: React.FC = () => {
     if (isRedirecting) return;
     setIsRedirecting(true);
     if (loginUrl && loginUrl !== "#") {
-      // Đi thẳng sang trang đăng nhập (bên ngoài router)
       window.location.assign(loginUrl);
     }
   };
 
   return (
     <div style={styles.page}>
-      {/* CSS cục bộ cho animation */}
       <style>{css}</style>
 
-      {/* Vệt nền mờ */}
+      {/* lớp nền hiệu ứng */}
       <div style={styles.noise} aria-hidden="true" />
 
       <div role="status" aria-live="polite" style={styles.card}>
-        {/* Logo / icon */}
         <div style={styles.logoWrap}>
           <div className="pulse-dot" />
           <div className="spinner" aria-hidden="true" />
         </div>
 
-        <h1 style={styles.title}>Đang chuẩn bị đăng nhập…</h1>
-        <p style={styles.subtitle}>{message}</p>
+        <h1 className="title">Đang chuẩn bị đăng nhập…</h1>
+        <p className="subtitle">{message}</p>
 
-        {/* Progress bar */}
-        <div style={styles.progressWrap} aria-hidden="true">
+        <div className="progress-wrap" aria-hidden="true">
           <div className="progress-track">
             <div className="progress-fill" />
           </div>
         </div>
 
-        {/* Countdown + actions */}
-        <div style={styles.actionsRow}>
+        <div className="actions-row">
           <button
             type="button"
             onClick={doRedirect}
@@ -82,7 +76,7 @@ const RequireLogin: React.FC = () => {
           </Link>
         </div>
 
-        <p style={styles.helperText}>
+        <p className="helper-text">
           Tự động chuyển trong <strong>{Math.max(seconds, 0)}s</strong>
         </p>
       </div>
@@ -92,13 +86,11 @@ const RequireLogin: React.FC = () => {
 
 export default RequireLogin;
 
-/* ===================== Styles ===================== */
-
+/* ===================== Base inline styles ===================== */
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100svh",
     width: "100%",
-    // Nền gradient tối hiện đại
     background:
       "linear-gradient(180deg, rgba(6,78,94,1) 0%, rgba(13,71,85,1) 40%, rgba(15,23,42,1) 100%)",
     color: "rgba(255,255,255,0.96)",
@@ -106,7 +98,8 @@ const styles: Record<string, React.CSSProperties> = {
     placeItems: "center",
     position: "relative",
     overflow: "hidden",
-    padding: "24px",
+    padding:
+      "max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))",
   },
   noise: {
     position: "absolute",
@@ -117,9 +110,9 @@ const styles: Record<string, React.CSSProperties> = {
     filter: "blur(0.5px)",
   },
   card: {
-    width: "min(560px, 96vw)",
+    width: "min(640px, 92vw)",
     borderRadius: 16,
-    padding: "28px 24px 22px",
+    padding: "24px",
     background:
       "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.06))",
     boxShadow:
@@ -131,47 +124,57 @@ const styles: Record<string, React.CSSProperties> = {
   },
   logoWrap: {
     position: "relative",
-    width: 86,
-    height: 86,
-    margin: "0 auto 16px",
-  },
-  title: {
-    margin: "4px 0 6px",
-    fontSize: "clamp(18px, 2.2vw, 22px)",
-    fontWeight: 700,
-    letterSpacing: 0.2,
-    textAlign: "center",
-  },
-  subtitle: {
-    margin: 0,
-    opacity: 0.9,
-    textAlign: "center",
-    fontSize: 14,
-    lineHeight: 1.55,
-  },
-  progressWrap: {
-    marginTop: 18,
-    marginBottom: 10,
-  },
-  actionsRow: {
-    display: "flex",
-    gap: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  helperText: {
-    marginTop: 8,
-    textAlign: "center",
-    fontSize: 12,
-    opacity: 0.75,
+    width: 82,
+    height: 82,
+    margin: "0 auto 12px",
   },
 };
 
+/* ===================== Responsive / Motion-aware CSS ===================== */
 const css = `
-/* Spinner tròn */
+:root {
+  --fg: rgba(255,255,255,0.96);
+  --fg-dim: rgba(255,255,255,0.82);
+  --fg-muted: rgba(255,255,255,0.72);
+  --card-w-max: 640px;
+}
+
+/* Fluid type scale */
+.title {
+  margin: 2px 0 6px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  text-align: center;
+  font-size: clamp(18px, 2.6vw, 26px);
+}
+.subtitle {
+  margin: 0;
+  color: var(--fg-dim);
+  text-align: center;
+  font-size: clamp(13px, 1.6vw, 15px);
+  line-height: 1.55;
+}
+
+/* Layout helpers */
+.progress-wrap { margin: 16px 0 8px; }
+.actions-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.helper-text {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* Spinner */
 .spinner {
-  --size: 86px;
+  --size: clamp(64px, 12vw, 96px);
   width: var(--size);
   height: var(--size);
   border-radius: 999px;
@@ -180,17 +183,15 @@ const css = `
   animation: spin 1s linear infinite;
   box-shadow: inset 0 0 22px rgba(0,0,0,0.25), 0 0 0 3px rgba(255,255,255,0.04);
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Nhịp “tim đập” bên trong */
+/* Pulse */
 .pulse-dot {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 18px;
-  height: 18px;
+  width: clamp(14px, 2.2vw, 18px);
+  height: clamp(14px, 2.2vw, 18px);
   border-radius: 999px;
   background: rgba(255,255,255,0.95);
   box-shadow: 0 0 24px rgba(255,255,255,0.7), 0 0 64px rgba(0,255,200,0.6);
@@ -202,10 +203,10 @@ const css = `
   100% { transform: scale(0.85); opacity: 0.9; }
 }
 
-/* Progress shimmer */
+/* Progress */
 .progress-track {
   width: 100%;
-  height: 10px;
+  height: clamp(8px, 1.4vw, 10px);
   border-radius: 999px;
   background: rgba(255,255,255,0.12);
   overflow: hidden;
@@ -232,11 +233,12 @@ const css = `
   cursor: pointer;
   border-radius: 12px;
   padding: 10px 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #0f172a;
   background: white;
   box-shadow: 0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8);
   transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+  font-size: clamp(13px, 1.6vw, 14px);
 }
 .primary-btn:hover { transform: translateY(-1px); }
 .primary-btn:active { transform: translateY(0); box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
@@ -254,6 +256,44 @@ const css = `
   background: rgba(255,255,255,0.06);
   backdrop-filter: blur(6px);
   transition: background .2s ease, transform .15s ease;
+  font-size: clamp(13px, 1.6vw, 14px);
 }
 .ghost-btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+
+/* ===================== Responsive tweaks ===================== */
+
+/* Mobile ≤ 360px: co giãn chữ & padding */
+@media (max-width: 360px) {
+  .subtitle { font-size: 12.5px; }
+  .primary-btn, .ghost-btn { padding: 9px 12px; }
+}
+
+/* Tablet ≥ 768px: tăng độ thoáng */
+@media (min-width: 768px) {
+  .title { letter-spacing: .3px; }
+  .subtitle { line-height: 1.6; }
+  .actions-row { gap: 12px; }
+}
+
+/* Desktop ≥ 1280px: nới card & bóng */
+@media (min-width: 1280px) {
+  .title { font-size: 26px; }
+}
+
+/* Ultra-wide ≥ 1920px: giữ tỷ lệ trung tâm, không nở quá */
+@media (min-width: 1920px) {
+  .helper-text { font-size: 13px; }
+}
+
+/* Landscape phone: đôi khi chiều cao ngắn, đảm bảo spacing */
+@media (max-height: 420px) and (orientation: landscape) {
+  .subtitle { display: none; } /* tối giản để không vỡ bố cục */
+  .helper-text { margin-top: 6px; }
+}
+
+/* prefers-reduced-motion: tắt animation nếu người dùng không muốn */
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .pulse-dot, .progress-fill { animation: none !important; }
+  .primary-btn, .ghost-btn { transition: none !important; }
+}
 `;
