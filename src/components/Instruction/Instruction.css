@@ -1,0 +1,177 @@
+.container {
+    display: flex;
+}
+
+.box-img {
+    justify-content: center;
+    position: relative;
+    display: flex;
+}
+
+p {
+    line-height: 1.5;
+}
+
+.p1 {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    margin-top: 12px;
+}
+
+.img {
+    width: 100%;
+    border-radius: 12px;
+}
+
+.row-img {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.img-arrow {
+    width: 170px;
+    margin: auto;
+    border-radius: 12px;
+}
+
+.img-2 {
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.arrow-annotation::before {
+    content: '';
+    position: absolute;
+    left: var(--arrow-before-left);
+    top: var(--arrow-before-top);
+    width: 30%;
+    height: 0;
+    border-top: 2px solid #fff;
+    border-right: 2px solid #fff;
+    border-radius: 0 0 0 10px;
+    font-size: 10px;
+}
+
+.arrow-annotation::after {
+    content: var(--arrow-label, 'Nhập email hoặc Username');
+    width: 80px;
+    position: absolute;
+    left: var(--arrow-after-left);
+    top: var(--arrow-after-top);
+    font-size: 10px;
+    color: #fff;
+    margin-left: 12px;
+    white-space: normal;
+    word-break: break-word;
+    text-align: left;
+}
+
+.arrow-annotation .dot {
+    position: absolute;
+    left: var(--arrow-dot-left);
+    top: var(--arrow-before-top);
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    opacity: 1;
+}
+
+.button-bottom {
+    margin-top: 80px;
+    height: 60px;
+    background-color: #3b8e7f;
+    border-radius: 14px;
+}
+
+/* Responsive cho tablet */
+@media (min-width: 600px) and (max-width: 1023px) {
+    .img-arrow {
+        width: 250px;
+    }
+
+    .img {
+        border-radius: 16px;
+    }
+
+    .row-img {
+        gap: 16px;
+    }
+
+    .p1 {
+        font-size: 18px;
+    }
+
+    .arrow-annotation::after {
+        width: 200px;
+        position: absolute;
+        left: var(--arrow-after-left);
+        top: var(--arrow-after-top);
+        color: #fff;
+        margin-left: 12px;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        font-size: 16px;
+    }
+
+    .button-bottom {
+        margin-top: 80px;
+        height: 60px;
+        background-color: #3b8e7f;
+        border-radius: 16px;
+        font-size: 14px;
+    }
+
+}
+
+/* Responsive cho desktop */
+@media (min-width: 1024px) {
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .img-arrow {
+        width: 320px;
+    }
+
+    .img {
+        width: 70%;
+        border-radius: 20px;
+    }
+
+    .row-img {
+        gap: 24px;
+    }
+
+    .p1 {
+        font-size: 20px;
+    }
+
+    .button-bottom {
+        margin-top: 80px;
+        height: 60px;
+        background-color: #3b8e7f;
+        border-radius: 18px;
+        font-size: 16px;
+        color: white;
+    }
+
+    .arrow-annotation::after {
+        width: 200px;
+        position: absolute;
+        left: var(--arrow-after-left);
+        top: var(--arrow-after-top);
+        color: #fff;
+        margin-left: 12px;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        font-size: 18px;
+    }
+}
