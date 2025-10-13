@@ -98,46 +98,46 @@ const GlobalTokenCatcher: React.FC = () => {
     ctrlRef.current = controller;
     keyRef.current = key;
 
-    (async () => {
-      try {
-        console.log("[Catcher] extracted =", loginToken);
-        const s = await verifyToken(loginToken, controller.signal, cleanHash);
+    // (async () => {
+    //   try {
+    //     console.log("[Catcher] extracted =", loginToken);
+    //     const s = await verifyToken(loginToken, controller.signal, cleanHash);
 
-        // Lưu session vào storage/app state của bạn
-        setSession(s); // (setSession nên phát 'mb:verified' nếu bạn đã cài)
+    //     // Lưu session vào storage/app state của bạn
+    //     setSession(s); // (setSession nên phát 'mb:verified' nếu bạn đã cài)
 
-        // Chuẩn hoá dữ liệu verify để lấy sessionId/cif
-        // BE có thể trả { data: {...} } hoặc trả object phẳng
-        const raw: any = (s as any)?.data ?? s;
+    //     // Chuẩn hoá dữ liệu verify để lấy sessionId/cif
+    //     // BE có thể trả { data: {...} } hoặc trả object phẳng
+    //     const raw: any = (s as any)?.data ?? s;
 
-        // Tìm sessionId & cif ở các vị trí thường gặp
-        const sessionId: string =
-          raw?.sessionId ?? raw?.user?.sessionId ?? raw?.accessToken ?? "";
+    //     // Tìm sessionId & cif ở các vị trí thường gặp
+    //     const sessionId: string =
+    //       raw?.sessionId ?? raw?.user?.sessionId ?? raw?.accessToken ?? "";
 
-        const cif: string = raw?.cif ?? raw?.user?.cif ?? "";
+    //     const cif: string = raw?.cif ?? raw?.user?.cif ?? "";
 
-        // Log & lưu localStorage cho /payment dùng
-        console.log("[verify-token] raw =", raw, "typeof:", typeof raw);
-        if (sessionId || cif) {
-          localStorage.setItem(
-            "mb_verify_profile",
-            JSON.stringify({ sessionId, cif })
-          );
-        }
+    //     // Log & lưu localStorage cho /payment dùng
+    //     console.log("[verify-token] raw =", raw, "typeof:", typeof raw);
+    //     if (sessionId || cif) {
+    //       localStorage.setItem(
+    //         "mb_verify_profile",
+    //         JSON.stringify({ sessionId, cif })
+    //       );
+    //     }
 
-        console.log("[Catcher] verify OK:", s);
-      } catch (e: any) {
-        if (e?.code === "ERR_CANCELED") {
-          console.warn("[Catcher] request canceled (token changed)");
-        } else {
-          console.error("[Catcher] verify failed:", e);
-          // Chỉ clear khi verify THẤT BẠI thực sự
-          clearSession();
-        }
-      } finally {
-        setLock(false);
-      }
-    })();
+    //     console.log("[Catcher] verify OK:", s);
+    //   } catch (e: any) {
+    //     if (e?.code === "ERR_CANCELED") {
+    //       console.warn("[Catcher] request canceled (token changed)");
+    //     } else {
+    //       console.error("[Catcher] verify failed:", e);
+    //       // Chỉ clear khi verify THẤT BẠI thực sự
+    //       clearSession();
+    //     }
+    //   } finally {
+    //     setLock(false);
+    //   }
+    // })();
 
     // ❗ KHÔNG abort trong cleanup để tránh StrictMode cancel lần mount đầu
     return () => {};
