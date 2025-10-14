@@ -14,10 +14,8 @@ const images = {
         history_scan: new URL("./img/instruction/history-scan.png", import.meta.url).href,
         scan: new URL("./img/instruction/scan.png", import.meta.url).href,
         download_app: new URL("./img/instruction/download-app.png", import.meta.url).href,
-        logo: new URL("./img/instruction/logo.png", import.meta.url).href,
         enter_otp: new URL("./img/instruction/enter-otp.png", import.meta.url).href,
         send_email: new URL("./img/instruction/send-email.png", import.meta.url).href,
-        login_1: new URL("./img/instruction/login-1.png", import.meta.url).href,
     }
 }
 

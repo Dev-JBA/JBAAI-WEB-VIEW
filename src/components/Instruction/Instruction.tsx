@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import images from "../../assets";
-import './instruction.css';
+import './Instruction.css';
 
 const Instruction = () => {
     return (
