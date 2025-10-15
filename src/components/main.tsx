@@ -33,14 +33,16 @@ const Home: React.FC = () => {
   const { search, hash } = useLocation();
 
   // Lấy loginToken + hash (bỏ #)
-  const { loginToken, hasToken, cleanHash } = useMemo(() => {
+  const { loginToken, hasToken, hasHash, cleanHash } = useMemo(() => {
     const params = new URLSearchParams(search);
     const token = (params.get("loginToken") || "").trim();
     const tokenExists = token.length > 0;
+     const hasHashFlag = !!hash && hash.length > 1; // "#MBAPP" -> true
     const normalizedHash = hash && hash.length > 1 ? hash.slice(1) : "";
     return {
       loginToken: token,
       hasToken: tokenExists,
+      hasHash: hasHashFlag,
       cleanHash: normalizedHash,
     };
   }, [search, hash]);
@@ -57,6 +59,20 @@ const Home: React.FC = () => {
       console.log(jsonPayload);
     }
   }, [hasToken, jsonPayload]);
+
+  // Nếu KHÔNG có token mà CÓ hash → đóng webview
+   useEffect(() => {
+    if (!hasToken && hasHash) {
+      try {
+        const w = window as any;
+        if (w && typeof w.ReactNaiveWebView?.postMessage === "function") {
+          w.ReactNaiveWebView.postMessage(
+            JSON.stringify({ type: "GO_BACK" })
+          );
+        }
+      } catch { }
+    }
+  }, [hasToken, hasHash]);
 
   // Copy JSON
   const [copied, setCopied] = useState(false);

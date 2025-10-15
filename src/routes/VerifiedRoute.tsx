@@ -7,6 +7,11 @@ const REQUIRE_HASH = true; // bạn yêu cầu bắt buộc hash
 export default function VerifiedRoute() {
   const loc = useLocation();
   const nav = useNavigate();
+  // kiểm tra loginToken và hash
+  const params = new URLSearchParams(loc.search || "");
+  const loginToken = (params.get("loginToken") || "").trim();
+  const hasToken = loginToken.length > 0;
+  const hasHash = !!loc.hash && loc.hash.length > 1;
 
   // nghe sự kiện để re-render khi catcher set session
   const [, force] = useState(0);
@@ -22,6 +27,15 @@ export default function VerifiedRoute() {
 
   // đọc trạng thái hiện tại
   const ok = isVerified() && !!getSession()?.sessionId;
+
+  // Nếu có token mà thiếu hash thì báo lỗi, không chuyển hướng
+  if (hasToken && REQUIRE_HASH && !hasHash) {
+    return (
+      <div style={{ color: "white", justifyContent:"center", alignSelf:"center", display:"flex", alignItems:"center", height:"80vh", fontSize:18 }}>
+        Thiếu mã hash, không thể xác thực phiên đăng nhập!  
+      </div>
+    );
+  }
 
   // nếu chưa ok → gửi sang /require-login, nhớ “điểm đến”
   if (!ok) {

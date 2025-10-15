@@ -1,5 +1,5 @@
 // src/components/GlobalTokenCatcher.tsx
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { verifyToken } from "../data/api/api_verify_token"; // giữ nguyên theo dự án của bạn
 import { clearSession, isVerified, setSession } from "../data/authStorage";
@@ -131,6 +131,7 @@ const GlobalTokenCatcher: React.FC = () => {
           console.warn("[Catcher] request canceled (token changed)");
         } else {
           console.error("[Catcher] verify failed:", e);
+          alert(e?.message || "Xác thực thất bại");
           // Chỉ clear khi verify THẤT BẠI thực sự
           clearSession();
         }
