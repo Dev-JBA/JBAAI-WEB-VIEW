@@ -15,6 +15,7 @@ function normalizeBeData(rs: any) {
   }
   return null;
 }
+
 const fmtAmount = (n: any) =>
   new Intl.NumberFormat("vi-VN").format(Number(n ?? 0));
 const fmtDT = (s?: string) => {
@@ -31,8 +32,11 @@ export default function MBOpenPayment() {
   const [err, setErr] = useState("");
   const [beRes, setBeRes] = useState<any>(null);
   const [payload, setPayload] = useState<MBPaymentData | null>(null);
+  const [showTech, setShowTech] = useState(false);
+
   const once = useRef(false);
 
+  // Lấy input từ màn trước (để người dùng soát lại)
   const { pkgId, initDesc, phone, email } = useMemo(() => {
     const st = (location?.state ?? {}) as any;
     const qs = new URLSearchParams(location?.search ?? "");
@@ -57,8 +61,8 @@ export default function MBOpenPayment() {
         });
         setStatus("calling");
         const rs = await api_create_mb_transaction(req);
-
         const d = normalizeBeData(rs);
+
         if (!d || typeof d !== "object") {
           setErr((rs as any)?.message || "Khởi tạo giao dịch thất bại.");
           setStatus("error");
@@ -108,14 +112,15 @@ export default function MBOpenPayment() {
     window.location.reload();
   };
 
+  // -------- UI --------
   return (
     <div className="mbp-shell">
       <div className="mbp-card">
         <header className="mbp-header">
           <div>
-            <h1>Xác nhận thông tin thanh toán</h1>
+            <h1>Khởi tạo thanh toán</h1>
             <p className="mbp-subtitle">
-              Vui lòng kiểm tra thông tin trước khi chuyển sang thanh toán
+              Kiểm tra thông tin trước khi chuyển sang MB App
             </p>
           </div>
           <span
@@ -137,52 +142,31 @@ export default function MBOpenPayment() {
           </span>
         </header>
 
-        {/* Input từ màn trước */}
-        <section className="mbp-section">
-          <h3>Thông tin người dùng</h3>
-          <div className="mbp-grid">
-            <div className="mbp-kv">
-              <span className="k">Gói</span>
-              <span className="v mbp-mono">{pkgId || "-"}</span>
-            </div>
-            <div className="mbp-kv full">
-              <span className="k">Mô tả </span>
-              <span className="v">{initDesc}</span>
-            </div>
-            {(phone || email) && (
-              <div className="mbp-kv full">
-                <span className="k">SĐT/Email</span>
-                <span className="v">
-                  {phone || "-"} / {email || "-"}
-                </span>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Trạng thái + CTA */}
-        <section className="mbp-section">
-          <h3>Trạng thái</h3>
-          {status === "calling" && (
-            <p className="mbp-muted">Đang khởi tạo giao dịch với máy chủ…</p>
-          )}
-          {status === "ready" && (
-            <p className="mbp-ok">
-              Đã khởi tạo giao dịch. Nhấn <strong>“xác nhận”</strong> để tiếp
-              tục.
-            </p>
-          )}
-          {status === "sending" && (
-            <p className="mbp-info">Đang gửi thông tin sang MB App…</p>
-          )}
-          {status === "error" && <p className="mbp-error">Lỗi: {err}</p>}
-        </section>
-
-        {/* Tóm tắt giao dịch từ BE */}
+        {/* TỔNG QUAN NGƯỜI DÙNG CẦN THẤY */}
         {beRes && (
           <section className="mbp-section">
-            <h3>Thông tin giao dịch</h3>
+            <div className="amount-card">
+              <div className="amount-label">Số tiền</div>
+              <div className="amount-value">{fmtAmount(beRes.amount)} VND</div>
+            </div>
+
             <div className="mbp-grid">
+              <div className="mbp-kv full">
+                <span className="k">Đơn vị thu</span>
+                <span className="v">{beRes?.merchant?.name || "-"}</span>
+              </div>
+              <div className="mbp-kv full">
+                <span className="k">Nội dung</span>
+                <span className="v">{beRes.description || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Loại giao dịch</span>
+                <span className="v">{beRes?.type?.name || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Thời điểm tạo</span>
+                <span className="v">{fmtDT(beRes.createdTime)}</span>
+              </div>
               <div className="mbp-kv">
                 <span className="k">Transaction ID</span>
                 <span className="v mbp-mono">{beRes.transactionId || "-"}</span>
@@ -191,65 +175,63 @@ export default function MBOpenPayment() {
                 <span className="k">Trạng thái</span>
                 <span className="v">{beRes.status || "-"}</span>
               </div>
-              <div className="mbp-kv">
-                <span className="k">Số tiền</span>
-                <span className="v">{fmtAmount(beRes.amount)} VND</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">CIF</span>
-                <span className="v mbp-mono">{beRes.cif || "-"}</span>
-              </div>
-              <div className="mbp-kv full">
-                <span className="k">Mô tả</span>
-                <span className="v">{beRes.description || "-"}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Tạo lúc</span>
-                <span className="v">{fmtDT(beRes.createdTime)}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Merchant</span>
-                <span className="v">
-                  {beRes?.merchant?.code || "-"} —{" "}
-                  {beRes?.merchant?.name || "-"}
-                </span>
-              </div>
-              <div className="mbp-kv full">
-                <span className="k">Loại giao dịch</span>
-                <span className="v">
-                  {beRes?.type?.code || "-"} — {beRes?.type?.name || "-"}
-                  {" · "}allowCard: {String(!!beRes?.type?.allowCard)}
-                </span>
-              </div>
-              <div className="mbp-kv full">
-                <span className="k">Gói</span>
-                <span className="v">
-                  <span className="mbp-mono">
-                    {beRes?.packageInfo?.id || "-"}
+              {/* Hiển thị tên gói nếu có; nếu BE chỉ có id thì vẫn show để KH tham chiếu */}
+              {(beRes?.packageInfo?.name || beRes?.packageInfo?.id) && (
+                <div className="mbp-kv full">
+                  <span className="k">Gói</span>
+                  <span className="v">
+                    {beRes?.packageInfo?.name || "-"}
+                    {beRes?.packageInfo?.price != null
+                      ? ` · ${beRes.packageInfo.price}`
+                      : ""}
                   </span>
-                  {" — "}
-                  {beRes?.packageInfo?.name || "-"}
-                  {beRes?.packageInfo?.price != null
-                    ? ` (${beRes.packageInfo.price})`
-                    : ""}
-                </span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">User ID</span>
-                <span className="v mbp-mono">{beRes.userId || "-"}</span>
-              </div>
+                </div>
+              )}
             </div>
           </section>
         )}
 
-        {/* Action bar */}
+        {/* THÔNG TIN TỪ BƯỚC TRƯỚC (để người dùng soát) */}
+        <section className="mbp-section">
+          <h3>Thông tin của bạn</h3>
+          <div className="mbp-grid">
+            <div className="mbp-kv">
+              <span className="k">Số điện thoại</span>
+              <span className="v">{phone || "-"}</span>
+            </div>
+            <div className="mbp-kv">
+              <span className="k">Email</span>
+              <span className="v">{email || "-"}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* TRẠNG THÁI + CTA */}
+        <section className="mbp-section">
+          <h3>Thanh toán</h3>
+          {status === "calling" && (
+            <p className="mbp-muted">Đang khởi tạo giao dịch…</p>
+          )}
+          {status === "ready" && (
+            <p className="mbp-ok">
+              Thông tin đã sẵn sàng. Nhấn{" "}
+              <strong>“Thanh toán trên MB App”</strong> để tiếp tục.
+            </p>
+          )}
+          {status === "sending" && (
+            <p className="mbp-info">Đang gửi thông tin sang MB App…</p>
+          )}
+          {status === "error" && <p className="mbp-error">Lỗi: {err}</p>}
+        </section>
+
+        {/* ACTION BAR */}
         <footer className="mbp-actions">
           <button
             className="btn btn-primary"
             onClick={onProceed}
             disabled={!payload || status !== "ready"}
           >
-            Thanh toán
+            Thanh toán trên MB App
           </button>
           <div className="spacer" />
           <button
@@ -260,10 +242,47 @@ export default function MBOpenPayment() {
           </button>
           {status === "error" && (
             <button className="btn" onClick={resendInit}>
-              Thử lại khởi tạo
+              Thử lại
             </button>
           )}
         </footer>
+
+        {/* KHỐI ẨN DÀNH CHO DEV (khi cần debug) */}
+        {beRes && (
+          <details
+            className="mbp-tech"
+            open={showTech}
+            onToggle={(e) => setShowTech((e.target as HTMLDetailsElement).open)}
+          >
+            <summary>Chi tiết kỹ thuật (dành cho dev)</summary>
+            <div className="mbp-grid">
+              <div className="mbp-kv">
+                <span className="k">CIF</span>
+                <span className="v mbp-mono">{beRes.cif || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Merchant code</span>
+                <span className="v mbp-mono">
+                  {beRes?.merchant?.code || "-"}
+                </span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Type code</span>
+                <span className="v mbp-mono">{beRes?.type?.code || "-"}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Package ID</span>
+                <span className="v mbp-mono">
+                  {beRes?.packageInfo?.id || "-"}
+                </span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">User ID</span>
+                <span className="v mbp-mono">{beRes?.userId || "-"}</span>
+              </div>
+            </div>
+          </details>
+        )}
       </div>
     </div>
   );

@@ -163,6 +163,27 @@
   flex: 1;
 }
 
+/* Số tiền nổi bật */
+.amount-card {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  margin-bottom: 12px;
+}
+.amount-label {
+  color: #334155;
+  font-weight: 700;
+}
+.amount-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .mbp-kv {
