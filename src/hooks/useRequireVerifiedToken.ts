@@ -5,19 +5,18 @@ import { getSession, isVerified } from "../data/authStorage";
 
 /**
  * Hook chỉ đọc trạng thái do GlobalTokenCatcher set.
- * KHÔNG tự verify, KHÔNG kích hoạt double-call.
+ * KHÔNG tự verify, KHÔNG gọi API.
  */
 type Opts = { graceMs?: number };
 
 export function useRequireVerifiedToken(opts: Opts = {}) {
-  const { graceMs = 1200 } = opts; // kéo dài 1.2s cho chắc
+  const { graceMs = 1200 } = opts;
   const location = useLocation();
   const navigate = useNavigate();
 
   const [checking, setChecking] = React.useState(true);
   const [ok, setOk] = React.useState(false);
 
-  // Có loginToken đang tới qua URL?
   const hasIncomingToken = React.useMemo(() => {
     const q = location.search || "";
     const h = location.hash || "";
@@ -34,30 +33,24 @@ export function useRequireVerifiedToken(opts: Opts = {}) {
       const verified = isVerified();
       const session = getSession();
 
-      // Đúng chuẩn: đã verified và có sessionId
       if (verified && session?.sessionId) {
         setOk(true);
         setChecking(false);
         return;
       }
 
-      // Chưa verified nhưng có token đến qua URL: chờ thêm (grace)
       if (hasIncomingToken) {
+        // chờ GlobalTokenCatcher verify xong
         tid = window.setTimeout(() => {
-          // thử đọc lại sau grace
           const v2 = isVerified();
           const s2 = getSession();
-          if (v2 && s2?.sessionId) {
-            setOk(true);
-          } else {
-            setOk(false);
-          }
+          setOk(!!(v2 && s2?.sessionId));
           setChecking(false);
         }, graceMs) as unknown as number;
         return;
       }
 
-      // Không có token đến, chưa verified => điều hướng login
+      // không có token tới và chưa verified → yêu cầu đăng nhập
       setOk(false);
       setChecking(false);
       navigate("/require-login", {
@@ -66,12 +59,22 @@ export function useRequireVerifiedToken(opts: Opts = {}) {
       });
     };
 
-    // Quyết định ngay lần đầu; nếu có incoming token thì effect ở trên sẽ chờ grace
     decide();
 
+    // nghe sự kiện mb:verified để phản ứng ngay (khỏi đợi hết grace)
+    const onVerified = () => {
+      const s = getSession();
+      if (s?.sessionId) {
+        setOk(true);
+        setChecking(false);
+      }
+    };
+    window.addEventListener("mb:verified" as any, onVerified);
+
     return () => {
-      cancelled = true;
       if (tid) clearTimeout(tid);
+      window.removeEventListener("mb:verified" as any, onVerified);
+      cancelled = true;
     };
   }, [hasIncomingToken, graceMs, navigate]);
 
