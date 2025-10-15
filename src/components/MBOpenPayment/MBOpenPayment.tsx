@@ -118,9 +118,9 @@ export default function MBOpenPayment() {
       <div className="mbp-card">
         <header className="mbp-header">
           <div>
-            <h1>Thông tin thanh toán</h1>
+            <h1>Thông tin chi tiết đơn hàng</h1>
             <p className="mbp-subtitle">
-              Kiểm tra thông tin trước khi xác nhận thanh toán
+              Kiểm tra thông tin của bạn trước khi xác nhận thanh toán
             </p>
           </div>
           <span
@@ -156,10 +156,7 @@ export default function MBOpenPayment() {
                 </span>
               </div>
             )}
-            <div className="mbp-kv">
-              <span className="k">Transaction ID</span>
-              <span className="v mbp-mono">{beRes.transactionId || "-"}</span>
-            </div>
+
             <div className="mbp-grid">
               <div className="mbp-kv full">
                 <span className="k">Đơn vị thu</span>
@@ -176,6 +173,10 @@ export default function MBOpenPayment() {
               <div className="mbp-kv">
                 <span className="k">Thời điểm tạo</span>
                 <span className="v">{fmtDT(beRes.createdTime)}</span>
+              </div>
+              <div className="mbp-kv">
+                <span className="k">Transaction ID</span>
+                <span className="v mbp-mono">{beRes.transactionId || "-"}</span>
               </div>
               <div className="amount-card">
                 <div className="amount-label">Số tiền</div>
@@ -211,8 +212,8 @@ export default function MBOpenPayment() {
           )}
           {status === "ready" && (
             <p className="mbp-ok">
-              Thông tin đã sẵn sàng. Nhấn{" "}
-              <strong>“Thanh toán trên MB App”</strong> để tiếp tục.
+              Thông tin đã sẵn sàng. Nhấn <strong>“Xác nhận thanh toán”</strong>{" "}
+              để tiếp tục.
             </p>
           )}
           {status === "sending" && (
@@ -223,6 +224,13 @@ export default function MBOpenPayment() {
 
         {/* ACTION BAR */}
         <footer className="mbp-actions">
+          <button
+            className="btn btn-primary"
+            onClick={onProceed}
+            disabled={!payload || status !== "ready"}
+          >
+            Xác nhận thanh toán
+          </button>
           <div className="spacer" />
           <button
             className="btn"
@@ -235,13 +243,6 @@ export default function MBOpenPayment() {
               Thử lại
             </button>
           )}
-          <button
-            className="btn btn-primary"
-            onClick={onProceed}
-            disabled={!payload || status !== "ready"}
-          >
-            Xác nhận thanh toán
-          </button>
         </footer>
 
         {/* KHỐI ẨN DÀNH CHO DEV (khi cần debug) */}
