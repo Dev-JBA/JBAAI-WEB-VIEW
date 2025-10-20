@@ -1,19 +1,13 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./PricingBlock.css";
 
 import type { Swiper as SwiperType } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import api_get_package from "../../data/api/api_get_package";
-import { useLocation, useNavigate } from "react-router-dom";
-import { getSession, isVerified } from "../../data/authStorage";
+import { useNavigate } from "react-router-dom";
 
 type TabType = "standard" | "premium";
-
-function hasValidSession() {
-  const s = getSession();
-  return isVerified() && !!s && !!s.sessionId;
-}
 
 const PricingBlock = () => {
   const [activeTab, setActiveTab] = useState<TabType>("standard");
@@ -22,64 +16,31 @@ const PricingBlock = () => {
   );
   const [dataPackage, setDataPackage] = useState<any>([]);
   const swiperRef = useRef<SwiperType | null>(null);
-
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // ========= ĐIỀU KIỆN CHO PHÉP THANH TOÁN =========
-  // Yêu cầu: có loginToken + hash "#MBAPP" + đã verify session
-  const access = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const token = (params.get("loginToken") || "").trim();
-    const hasToken = token.length > 0;
-
-    const rawHash = location.hash ? location.hash.slice(1) : ""; // bỏ dấu #
-    const isMBAppHash = rawHash.toUpperCase() === "MBAPP";
-
-    const sessionOK = hasValidSession();
-
-    return {
-      hasToken,
-      isMBAppHash,
-      sessionOK,
-      canPay: hasToken && isMBAppHash && sessionOK,
-    };
-  }, [location.search, location.hash]);
 
   // dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
 
   const handlePayment = (packageId: string) => {
-    if (!access.canPay) {
-      // Trường hợp mở trên web PC (không token/hash) hoặc chưa verify -> chặn + điều hướng login
-      navigate("/require-login", {
-        state: {
-          next: "/account-payment",
-          message:
-            !access.hasToken || !access.isMBAppHash
-              ? "Bạn cần đăng nhập từ ứng dụng MB để tiếp tục thanh toán."
-              : "Thiếu token/phiên. Vui lòng đăng nhập để tiếp tục.",
-        },
-        replace: false,
-      });
-      return;
-    }
-    // Đủ điều kiện -> theo luồng hiện tại
     setPendingPackageId(packageId);
     setShowConfirmDialog(true);
   };
 
-  /* Call API List Package */
+  /*Call API List Package*/
   const callAPIListPackage = async () => {
     try {
-      const response: any = await api_get_package({ type: activeTab });
+      const response: any = await api_get_package({
+        type: activeTab,
+      });
       setDataPackage(response);
       if (Array.isArray(response) && response.length > 0) {
         setTimeout(() => {
-          if (swiperRef.current) swiperRef.current.slideTo(1, 300);
+          if (swiperRef.current) {
+            swiperRef.current.slideTo(1, 300);
+          }
         }, 100);
-        setSelectedPackageId(response[1]?._id ?? response[0]?._id ?? null);
+        setSelectedPackageId(response[1]._id);
       } else {
         setSelectedPackageId(null);
       }
@@ -117,29 +78,6 @@ const PricingBlock = () => {
     <div id="pricing" className="pricing-container">
       <header className="pricing-header">
         <h1 className="head-title">Gói Dịch Vụ</h1>
-
-        {/* Cảnh báo khi không đủ điều kiện thanh toán */}
-        {!access.canPay && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="pricing-warning"
-            style={{
-              marginTop: 8,
-              padding: "8px 12px",
-              borderRadius: 10,
-              background: "rgba(255,196,0,0.12)",
-              color: "#8a6d00",
-              fontSize: 14,
-              border: "1px solid rgba(0,0,0,0.06)",
-            }}
-          >
-            {!access.hasToken || !access.isMBAppHash
-              ? "Bạn đang truy cập từ trình duyệt. Vui lòng mở qua ứng dụng MB để thanh toán."
-              : "Thiếu token/phiên. Vui lòng đăng nhập để tiếp tục."}
-          </div>
-        )}
-
         <div className="tab-navigator">
           <button
             className={`tab-button ${activeTab === "standard" ? "active" : ""}`}
@@ -161,18 +99,19 @@ const PricingBlock = () => {
           </button>
         </div>
       </header>
-
       <Swiper
         className="package-swiper"
         loop={false}
         slidesPerView={"auto"}
         spaceBetween={15}
         centeredSlides={true}
-        onSwiper={(swiper: any) => (swiperRef.current = swiper)}
+        onSwiper={(swiper: any) => {
+          swiperRef.current = swiper;
+        }}
         onSlideChange={(swiper: SwiperType) => {
-          const activeSlide = dataPackage?.[swiper.realIndex];
+          const activeSlideId = dataPackage[swiper.realIndex]._id;
           setSelectedPackageId(
-            activeSlide?._id ?? dataPackage?.[0]?._id ?? null
+            activeSlideId ? activeSlideId : dataPackage[0]._id
           );
         }}
       >
@@ -184,7 +123,7 @@ const PricingBlock = () => {
               }`}
               onClick={() => setSelectedPackageId(data._id)}
             >
-              {/* Header */}
+              {/* Phần 1: Header - cố định ở trên cùng */}
               <div className="card-header">
                 <h1 className="package-name">{data.name}</h1>
                 <div className="package-row">
@@ -194,35 +133,20 @@ const PricingBlock = () => {
               </div>
               <div className="line-divider"></div>
 
-              {/* Body scrollable */}
+              {/* Phần 2: Body - khu vực sẽ cuộn */}
               <div className="card-body-scrollable">
                 <p className="package-description">{data.description}</p>
               </div>
 
-              {/* Footer button */}
+              {/* Phần 3: Nút bấm - cố định ở dưới cùng */}
               <div className="card-payment-button">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePayment(data._id);
                   }}
-                  // có thể để enable để vẫn nhấn được -> đưa sang /require-login
-                  // nhưng để UX rõ ràng thì disable + tooltip:
-                  disabled={!access.canPay}
-                  title={
-                    access.canPay
-                      ? "Tiếp tục thanh toán"
-                      : !access.hasToken || !access.isMBAppHash
-                      ? "Bạn cần mở từ ứng dụng MB"
-                      : "Thiếu token/phiên - cần đăng nhập"
-                  }
-                  className={!access.canPay ? "btn-disabled" : ""}
-                  style={{
-                    opacity: access.canPay ? 1 : 0.6,
-                    cursor: access.canPay ? "pointer" : "not-allowed",
-                  }}
                 >
-                  {access.canPay ? "Thanh toán" : "Đăng nhập để thanh toán"}
+                  Thanh toán
                 </button>
               </div>
             </div>
@@ -242,7 +166,7 @@ const PricingBlock = () => {
             onClick={(e) => e.stopPropagation()}
             style={{ position: "relative" }}
           >
-            {/* nút X */}
+            {/* nút X ở góc trên phải */}
             <button
               aria-label="Close"
               onClick={cancelConfirm}
@@ -271,9 +195,8 @@ const PricingBlock = () => {
             <img src="/logo192.png" alt="Logo" className="logo" />
             <h3>Bạn đã có tài khoản JBAAI chưa?</h3>
             <p>
-              {" "}
               Xác nhận để chuyển đến trang đăng nhập. Nếu chưa có tài khoản,
-              chọn đăng ký.{" "}
+              chọn đăng ký.
             </p>
             <div className="confirm-actions">
               <button
@@ -292,5 +215,4 @@ const PricingBlock = () => {
     </div>
   );
 };
-
 export default PricingBlock;
