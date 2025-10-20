@@ -1,3 +1,4 @@
+// src/components/main.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -28,51 +29,55 @@ import InstructionPage from "../Pages/instructionPage/instruction";
 
 const SHOW_TOKEN_PANEL = true; // tắt khi lên prod nếu cần
 
-// Home có panel hiển thị JSON token+hash
-const Home: React.FC = () => {
+/** Phiên đã verify chưa */
+function hasValidSession() {
+  const s = getSession();
+  return isVerified() && !!s && !!s.sessionId;
+}
+
+/** Helper đọc điều kiện từ URL + session */
+function useAccessGuard() {
   const { search, hash } = useLocation();
 
-  // Lấy loginToken + hash (bỏ #)
-  const { loginToken, hasToken, hasHash, cleanHash } = useMemo(() => {
+  return useMemo(() => {
     const params = new URLSearchParams(search);
     const token = (params.get("loginToken") || "").trim();
-    const tokenExists = token.length > 0;
-     const hasHashFlag = !!hash && hash.length > 1; // "#MBAPP" -> true
-    const normalizedHash = hash && hash.length > 1 ? hash.slice(1) : "";
+    const hasToken = token.length > 0;
+
+    const cleanHash = hash ? hash.slice(1) : ""; // bỏ dấu #
+    const isMBAppHash = cleanHash.toUpperCase() === "MBAPP";
+
+    const sessionOK = hasValidSession();
+
     return {
       loginToken: token,
-      hasToken: tokenExists,
-      hasHash: hasHashFlag,
-      cleanHash: normalizedHash,
+      hasToken,
+      cleanHash,
+      isMBAppHash,
+      sessionOK,
+      // đủ điều kiện cho thanh toán
+      canPay: hasToken && isMBAppHash && sessionOK,
     };
   }, [search, hash]);
+}
+
+// ====== HOME (luôn vào được) ======
+const Home: React.FC = () => {
+  const { loginToken, hasToken, cleanHash, isMBAppHash, sessionOK, canPay } =
+    useAccessGuard();
 
   const jsonPayload = useMemo(
     () => JSON.stringify({ loginToken, hash: cleanHash }, null, 2),
     [loginToken, cleanHash]
   );
 
-  // Log ra console khi CÓ token
+  // Debug khi có token
   useEffect(() => {
     if (hasToken) {
       // eslint-disable-next-line no-console
-      console.log(jsonPayload);
+      console.log("[Home] token payload:", jsonPayload);
     }
   }, [hasToken, jsonPayload]);
-
-  // Nếu KHÔNG có token mà CÓ hash → đóng webview
-   useEffect(() => {
-    if (!hasToken && hasHash) {
-      try {
-        const w = window as any;
-        if (w && typeof w.ReactNaiveWebView?.postMessage === "function") {
-          w.ReactNaiveWebView.postMessage(
-            JSON.stringify({ type: "GO_BACK" })
-          );
-        }
-      } catch { }
-    }
-  }, [hasToken, hasHash]);
 
   // Copy JSON
   const [copied, setCopied] = useState(false);
@@ -88,13 +93,53 @@ const Home: React.FC = () => {
     <div>
       <Navbar />
 
-      {/* Panel hiển thị JSON khi có token */}
+      {/* Banner cảnh báo khi chưa đủ điều kiện thanh toán (tuỳ chọn hiển thị) */}
+      {!canPay && (
+        <div
+          role="alert"
+          aria-live="polite"
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 999,
+            background: "rgba(255,196,0,0.12)",
+            color: "#8a6d00",
+            padding: "12px 16px",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>
+            {!hasToken || !isMBAppHash
+              ? "Bạn đang truy cập từ trình duyệt."
+              : "Thiếu token/phiên."}
+          </span>
+          <span>
+            Vui lòng đăng nhập (mở qua ứng dụng MB) để thực hiện thanh toán.
+          </span>
+          <Link
+            to="/require-login"
+            state={{ next: "/" }}
+            style={{
+              marginLeft: "auto",
+              color: "#0ea5e9",
+              textDecoration: "underline",
+            }}
+          >
+            Đăng nhập ngay
+          </Link>
+        </div>
+      )}
+
+      {/* Panel hiển thị JSON khi có token (debug) */}
       {hasToken && SHOW_TOKEN_PANEL && (
         <div
           style={{
             position: "sticky",
             top: 0,
-            zIndex: 999,
+            zIndex: 998,
             background: "#0f172a",
             color: "#fff",
             padding: "12px 12px 0",
@@ -127,7 +172,11 @@ const Home: React.FC = () => {
 
             {/* Giữ nguyên query & hash khi sang /mbapp/result */}
             <Link
-              to={{ pathname: "/mbapp/result", search, hash }}
+              to={{
+                pathname: "/mbapp/result",
+                search: `?loginToken=${loginToken}`,
+                hash: `#${cleanHash}`,
+              }}
               style={{ marginLeft: "auto", color: "#93c5fd" }}
             >
               Tới trang kết quả
@@ -152,13 +201,14 @@ const Home: React.FC = () => {
       )}
 
       <IntroductionBlock />
+      {/* Nút thanh toán và toàn bộ flow chặn/cho phép đã được xử lý bên trong PricingBlock */}
       <PricingBlock />
       <UsageGuideBlock />
     </div>
   );
 };
 
-// /require-login: khi verify xong thì tự quay về “next” (nếu có)
+// /require-login: verify xong tự quay về “next” (nếu có)
 const RequireLoginAuto: React.FC = () => {
   const nav = useNavigate();
   const loc = useLocation();
@@ -167,7 +217,7 @@ const RequireLoginAuto: React.FC = () => {
       const next = (loc.state as any)?.next || "/";
       nav(next, { replace: true });
     };
-    if (isVerified() && getSession()?.sessionId) goNext();
+    if (hasValidSession()) goNext();
     const onVerified = () => goNext();
     window.addEventListener("mb:verified", onVerified);
     return () => window.removeEventListener("mb:verified", onVerified);
@@ -177,18 +227,18 @@ const RequireLoginAuto: React.FC = () => {
 
 const Main: React.FC = () => (
   <Router>
-    {/* ✅ VERIFY 1 LẦN Ở ĐÂY */}
+    {/* ✅ Bắt và verify loginToken một lần ở root */}
     <GlobalTokenCatcher />
 
     <Routes>
-      {/* Các trang KHÔNG cần phiên */}
+      {/* Các trang KHÔNG cần phiên (Home luôn mở được) */}
+      <Route path="/" element={<Home />} />
       <Route path="/require-login" element={<RequireLoginAuto />} />
       <Route path="/account-payment" element={<AccountPayment />} />
       <Route path="/payment" element={<MBOpenPaymentPage />} />
 
-      {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
+      {/* Các trang cần phiên MB (tùy dự án, vẫn giữ VerifiedRoute) */}
       <Route element={<VerifiedRoute />}>
-        <Route path="/" element={<Home />} />
         <Route path="/mbapp/result" element={<ResultPage />} />
         <Route path="/instruction" element={<InstructionPage />} />
         <Route path="/work" element={<WorkPage />} />
