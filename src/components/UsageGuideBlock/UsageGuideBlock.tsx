@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import "./UsageGuideBlock.css";
 import "../../styles/HomePage.css";
+import { getUser } from "../../data/authStorage";
 
 const UsageGuideBlock = () => {
   const [play, setPlay] = useState(false);
+  const user: any = (getUser?.() ?? {}) as any;
+  const sessionId = user?.sessionId;
+  const cif = user?.cif;
+
 
   return (
     <section id="usage" className="usage-guide-app">
@@ -39,6 +44,7 @@ const UsageGuideBlock = () => {
           )}
         </div>
         <p>* Video hướng dẫn sử dụng ứng dụng JBAAI</p>
+        <p style={{fontSize: '10px'}}>sessionId: {sessionId} - cif: {cif}</p>
       </div>
 
       <footer
