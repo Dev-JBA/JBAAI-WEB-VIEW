@@ -26,9 +26,10 @@ export function buildInitRequest(location: {
 
   const user: any = (getUser?.() ?? {}) as any;
 
-  const sessionId =
-    verifyRaw?.sessionId || user?.sessionId || user?.accessToken || "";
-  const cif = verifyRaw?.cif || user?.user?.cif || ""; // <-- ƯU TIÊN verify
+  const sessionId = user?.sessionId;
+  const cif = user?.cif;
+    // verifyRaw?.sessionId || user?.sessionId || user?.accessToken || "";
+  // const cif = verifyRaw?.cif || user?.user?.cif || ""; // <-- ƯU TIÊN verify
 
   const phone = st.phone ?? qs.get("phone") ?? user?.user?.phone ?? "";
   const email = st.email ?? qs.get("email") ?? user?.user?.email ?? "";
