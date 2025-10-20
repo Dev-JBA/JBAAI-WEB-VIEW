@@ -183,11 +183,12 @@ const Main: React.FC = () => (
       <Route path="/require-login" element={<RequireLoginAuto />} />
       <Route path="/account-payment" element={<AccountPayment />} />
       <Route path="/payment" element={<MBOpenPaymentPage />} />
+      <Route path="/mbapp/result" element={<ResultPage />} />
 
       {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
       <Route element={<VerifiedRoute />}>
         <Route path="/" element={<Home />} />
-        <Route path="/mbapp/result" element={<ResultPage />} />
+        {/* <Route path="/mbapp/result" element={<ResultPage />} /> */}
         <Route path="/instruction" element={<InstructionPage />} />
         <Route path="/work" element={<WorkPage />} />
         <Route path="/contact" element={<ContactPage />} />
