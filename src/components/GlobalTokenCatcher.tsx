@@ -76,12 +76,14 @@ const GlobalTokenCatcher: React.FC = () => {
   const runningRef = React.useRef(false);
 
   // Nếu muốn bắt buộc có hash (ví dụ "#MBAPP"), bật cờ này
-  const REQUIRE_HASH = true; // ← đổi true nếu BE yêu cầu
+  const REQUIRE_HASH = true;
 
   React.useEffect(() => {
     const loginToken = extractLoginToken(location.search, location.hash);
     const hasHash = !!location.hash && location.hash.length > 1;
-    const hasIncomingToken = !!loginToken && (!REQUIRE_HASH || hasHash);
+    // Route /mbapp/result không cần hash
+    const isResultPage = location.pathname === "/mbapp/result";
+    const hasIncomingToken = !!loginToken && (!REQUIRE_HASH || hasHash || isResultPage);
 
     // ✅ chỉ verify đúng 1 lần: khi có token + chưa verified + không đang chạy
     if (!hasIncomingToken || isVerified() || runningRef.current) return;
@@ -106,8 +108,8 @@ const GlobalTokenCatcher: React.FC = () => {
           typeof raw?.cif === "string" && raw.cif
             ? raw.cif
             : typeof raw?.user?.cif === "string"
-            ? raw.user.cif
-            : null;
+              ? raw.user.cif
+              : null;
 
         const fullname: string | null =
           raw?.fullName ?? raw?.fullname ?? raw?.user?.fullName ?? null;
@@ -141,7 +143,7 @@ const GlobalTokenCatcher: React.FC = () => {
     })();
 
     // không abort trong cleanup để tránh StrictMode hủy request đầu
-    return () => {};
+    return () => { };
   }, [location, navigate]);
 
   return null;
