@@ -26,7 +26,7 @@ const ResultPayment: React.FC<ResultPaymentProps> = ({ dataTransaction, finalMes
                 </div>
                 <p style={{ opacity: 0.8 }}>Giao dịch thành công. Cảm ơn quí khách đã lựa chọn sản phẩm</p>
             </div>
-            <div className="detailContainer">
+            {/* <div className="detailContainer">
                 <div className="row">
                     <h3>Thông tin giao dịch</h3>
                     <p>{dataTransaction?.id || "-"}</p>
@@ -57,8 +57,8 @@ const ResultPayment: React.FC<ResultPaymentProps> = ({ dataTransaction, finalMes
                     <p>{dataTransaction?.status || "-"}</p>
                 </div>
 
-            </div>
-            <button className="button-bottom"><Link to="/instruction" style={{ color: "black", textDecoration: "none" }}>Hướng dẫn cài đặt ứng dụng</Link></button>
+            </div> */}
+            <button className="button-bottom"><Link to="/instruction" style={{ color: "white", textDecoration: "none" }}>Hướng dẫn cài đặt ứng dụng</Link></button>
         </div>
     </div>
 };
