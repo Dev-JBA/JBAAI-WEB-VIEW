@@ -184,7 +184,7 @@ const Main: React.FC = () => (
       <Route path="/account-payment" element={<AccountPayment />} />
       <Route path="/payment" element={<MBOpenPaymentPage />} />
       <Route path="/mbapp/result" element={<ResultPage />} />
-      <Route path="/mbpapxp/result" element={<ResultPage />} />
+      <Route path="/mbapxp/result" element={<ResultPage />} />
       <Route path="/instruction" element={<InstructionPage />} />
 
       {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
