@@ -85,6 +85,9 @@ const GlobalTokenCatcher: React.FC = () => {
     const isResultPage = location.pathname === "/mbapp/result";
     const hasIncomingToken = !!loginToken && (!REQUIRE_HASH || hasHash || isResultPage);
 
+    // Nếu là trang /mbapp/result thì bỏ qua verifyToken
+    if (isResultPage) return;
+
     // ✅ chỉ verify đúng 1 lần: khi có token + chưa verified + không đang chạy
     if (!hasIncomingToken || isVerified() || runningRef.current) return;
 
@@ -130,13 +133,14 @@ const GlobalTokenCatcher: React.FC = () => {
       } catch (e) {
         if (isAbortError(e)) return;
         clearSession();
-        navigate("/require-login", {
-          replace: true,
-          state: {
-            message:
-              "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
-          },
-        });
+        if (!isResultPage) {
+          navigate("/require-login", {
+            replace: true,
+            state: {
+              message: "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
+            },
+          });
+        }
       } finally {
         runningRef.current = false;
       }
