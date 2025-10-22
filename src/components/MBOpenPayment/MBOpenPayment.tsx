@@ -4,6 +4,7 @@ import { buildInitRequest } from "./buildInitRequest";
 import api_create_mb_transaction from "../../data/api/api_create_mb_transaction";
 import { openMBPaymentScreen, MBPaymentData } from "./mbPayment";
 import "./MBOpenPayment.css";
+import { saveTxn } from "../../data/txnStorage"; // 👈 thêm import
 
 type ViewState = "calling" | "ready" | "sending" | "error";
 
@@ -36,17 +37,13 @@ export default function MBOpenPayment() {
 
   const once = useRef(false);
 
-  // Lấy input từ màn trước (để người dùng soát lại)
-  const { pkgId, initDesc, phone, email } = useMemo(() => {
+  const { pkgId, phone, email } = useMemo(() => {
     const st = (location?.state ?? {}) as any;
     const qs = new URLSearchParams(location?.search ?? "");
     const id = (st.packageId ?? qs.get("packageId") ?? "") as string;
-    const desc = (
-      id ? `Thanh toán gói dịch vụ ${id}` : "Thanh toán gói dịch vụ"
-    ).slice(0, 200);
+    const desc = id ? `Thanh toán gói dịch vụ ${id}` : "Thanh toán gói dịch vụ";
     return {
       pkgId: id,
-      initDesc: desc,
       phone: st.phone ?? qs.get("phone") ?? "",
       email: st.email ?? qs.get("email") ?? "",
     };
@@ -68,7 +65,13 @@ export default function MBOpenPayment() {
           setStatus("error");
           return;
         }
+
         setBeRes(d);
+
+        // ✅ LƯU transactionId để dùng ở ResultPayment
+        if (d?.transactionId) {
+          saveTxn(String(d.transactionId));
+        }
 
         const pld: MBPaymentData = {
           merchant: {
@@ -85,6 +88,7 @@ export default function MBOpenPayment() {
           description: String(d?.description || "").slice(0, 200),
           successMessage: d?.successMessage || undefined,
         };
+
         setPayload(pld);
         setStatus("ready");
       } catch (e: any) {
@@ -96,7 +100,6 @@ export default function MBOpenPayment() {
     if (once.current) return;
     once.current = true;
     run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   const onProceed = () => {
@@ -112,7 +115,7 @@ export default function MBOpenPayment() {
     window.location.reload();
   };
 
-  // -------- UI --------
+  // ===== UI =====
   return (
     <div className="mbp-shell">
       <div className="mbp-card">
@@ -142,54 +145,29 @@ export default function MBOpenPayment() {
           </span>
         </header>
 
-        {/* TỔNG QUAN NGƯỜI DÙNG CẦN THẤY */}
+        {/* Thông tin đơn hàng */}
         {beRes && (
           <section className="mbp-section">
-            {(beRes?.packageInfo?.name || beRes?.packageInfo?.id) && (
-              <div className="mbp-kv full">
-                <span className="k">Gói</span>
-                <span className="v">
-                  {beRes?.packageInfo?.name || "-"}
-                  {beRes?.packageInfo?.price != null
-                    ? ` · ${beRes.packageInfo.price}`
-                    : ""}
-                </span>
-              </div>
-            )}
-
-            <div className="mbp-grid">
-              <div className="mbp-kv full">
-                <span className="k">Đơn vị thu</span>
-                <span className="v">{beRes?.merchant?.name || "-"}</span>
-              </div>
-              <div className="mbp-kv full">
-                <span className="k">Nội dung</span>
-                <span className="v">{beRes.description || "-"}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Loại giao dịch</span>
-                <span className="v">{beRes?.type?.name || "-"}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Thời điểm tạo</span>
-                <span className="v">{fmtDT(beRes.createdTime)}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Transaction ID</span>
-                <span className="v mbp-mono">{beRes.transactionId || "-"}</span>
-              </div>
-              <div className="amount-card">
-                <div className="amount-label">Số tiền</div>
-                <div className="amount-value">
-                  {fmtAmount(beRes.amount)} VND
-                </div>
-              </div>
-              {/* Hiển thị tên gói nếu có; nếu BE chỉ có id thì vẫn show để KH tham chiếu */}
+            <div className="mbp-kv full">
+              <span className="k">Đơn vị thu</span>
+              <span className="v">{beRes?.merchant?.name || "-"}</span>
+            </div>
+            <div className="mbp-kv full">
+              <span className="k">Nội dung</span>
+              <span className="v">{beRes?.description || "-"}</span>
+            </div>
+            <div className="mbp-kv">
+              <span className="k">Transaction ID</span>
+              <span className="v mbp-mono">{beRes?.transactionId || "-"}</span>
+            </div>
+            <div className="mbp-kv">
+              <span className="k">Số tiền</span>
+              <span className="v">{fmtAmount(beRes?.amount)} VND</span>
             </div>
           </section>
         )}
 
-        {/* THÔNG TIN TỪ BƯỚC TRƯỚC (để người dùng soát) */}
+        {/* Thông tin khách hàng */}
         <section className="mbp-section">
           <h3>Thông tin của bạn</h3>
           <div className="mbp-grid">
@@ -204,7 +182,7 @@ export default function MBOpenPayment() {
           </div>
         </section>
 
-        {/* TRẠNG THÁI + CTA */}
+        {/* Trạng thái thanh toán */}
         <section className="mbp-section">
           <h3>Thanh toán</h3>
           {status === "calling" && (
@@ -222,7 +200,7 @@ export default function MBOpenPayment() {
           {status === "error" && <p className="mbp-error">Lỗi: {err}</p>}
         </section>
 
-        {/* ACTION BAR */}
+        {/* Nút hành động */}
         <footer className="mbp-actions">
           <button
             className="btn btn-primary"
@@ -244,43 +222,6 @@ export default function MBOpenPayment() {
             </button>
           )}
         </footer>
-
-        {/* KHỐI ẨN DÀNH CHO DEV (khi cần debug) */}
-        {beRes && (
-          <details
-            className="mbp-tech"
-            open={showTech}
-            onToggle={(e) => setShowTech((e.target as HTMLDetailsElement).open)}
-          >
-            <summary>Chi tiết kỹ thuật (dành cho dev)</summary>
-            <div className="mbp-grid">
-              <div className="mbp-kv">
-                <span className="k">CIF</span>
-                <span className="v mbp-mono">{beRes.cif || "-"}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Merchant code</span>
-                <span className="v mbp-mono">
-                  {beRes?.merchant?.code || "-"}
-                </span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Type code</span>
-                <span className="v mbp-mono">{beRes?.type?.code || "-"}</span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">Package ID</span>
-                <span className="v mbp-mono">
-                  {beRes?.packageInfo?.id || "-"}
-                </span>
-              </div>
-              <div className="mbp-kv">
-                <span className="k">User ID</span>
-                <span className="v mbp-mono">{beRes?.userId || "-"}</span>
-              </div>
-            </div>
-          </details>
-        )}
       </div>
     </div>
   );
