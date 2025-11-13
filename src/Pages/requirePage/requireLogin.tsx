@@ -10,8 +10,22 @@ const RequireLogin: React.FC = () => {
     "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.";
 
   const loginUrl = useMemo(() => {
-    const envUrl = (import.meta.env.VITE_LOGIN_URL as string) || "#";
-    return envUrl;
+    const raw = (import.meta.env.VITE_LOGIN_URL as string | undefined)?.trim();
+
+    // Không redirect nếu để placeholder hoặc không cấu hình
+    if (!raw || raw === "#" || raw.includes("<login-url>")) {
+      console.warn("⚠️ LOGIN_URL chưa cấu hình đúng:", raw);
+      return "";
+    }
+
+    try {
+      // Validate cho chắc chắn URL hợp lệ
+      const u = new URL(raw);
+      return u.toString();
+    } catch {
+      console.error("⚠️ LOGIN_URL không phải URL hợp lệ:", raw);
+      return "";
+    }
   }, []);
 
   const [seconds, setSeconds] = useState(COUNTDOWN_SECS);
