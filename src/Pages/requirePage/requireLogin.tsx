@@ -1,3 +1,4 @@
+// src/Pages/requirePage/requireLogin.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 
@@ -7,39 +8,63 @@ const RequireLogin: React.FC = () => {
   const location = useLocation() as { state?: { message?: string } };
   const message =
     location.state?.message ||
-    "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.";
+    "Phiên đăng nhập đã hết hạn. Vui lòng mở lại Mini App từ ứng dụng MB để tiếp tục.";
 
+  // Đọc env (có thể bỏ trống nếu không dùng redirect)
+  const rawEnvUrl = (
+    (import.meta.env.VITE_LOGIN_URL as string | undefined) ?? ""
+  ).trim();
+
+  // Chuẩn hoá URL: nếu trống hoặc đang để kiểu https://<login-url> thì coi như không dùng
   const loginUrl = useMemo(() => {
-    const envUrl = (import.meta.env.VITE_LOGIN_URL as string) || "#";
-    return envUrl;
-  }, []);
+    if (!rawEnvUrl || rawEnvUrl.includes("<")) {
+      return null;
+    }
+    try {
+      const url = rawEnvUrl.startsWith("http")
+        ? new URL(rawEnvUrl)
+        : new URL(rawEnvUrl, window.location.origin);
+      return url.toString();
+    } catch {
+      return null;
+    }
+  }, [rawEnvUrl]);
 
   const [seconds, setSeconds] = useState(COUNTDOWN_SECS);
   const [redirecting, setRedirecting] = useState(false);
 
+  const handleRedirect = () => {
+    if (redirecting || !loginUrl) return;
+    setRedirecting(true);
+    try {
+      window.location.assign(loginUrl);
+    } catch (err) {
+      console.error("[RequireLogin] Redirect thất bại:", err);
+      setRedirecting(false);
+    }
+  };
+
   useEffect(() => {
+    if (!loginUrl) return; // không có URL thì không auto redirect
+
     const timer = setInterval(() => {
       setSeconds((s) => {
         if (s <= 1) {
           clearInterval(timer);
           handleRedirect();
+          return 0;
         }
         return s - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loginUrl]);
 
-  const handleRedirect = () => {
-    if (redirecting) return;
-    setRedirecting(true);
-    if (loginUrl && loginUrl !== "#") window.location.assign(loginUrl);
-  };
+  const canRedirect = !!loginUrl;
 
   return (
     <div style={styles.wrapper}>
-      {/* Global-safe CSS to prevent overflow */}
       <style>{css}</style>
 
       <div style={styles.card}>
@@ -65,18 +90,29 @@ const RequireLogin: React.FC = () => {
         <div className="actions">
           <button
             onClick={handleRedirect}
-            disabled={redirecting}
+            disabled={redirecting || !canRedirect}
             className="btn-primary"
           >
-            {redirecting ? "Đang chuyển..." : "Chuyển ngay"}
+            {canRedirect
+              ? redirecting
+                ? "Đang chuyển..."
+                : "Chuyển ngay"
+              : "Thiếu cấu hình login URL"}
           </button>
+
           <Link to="/" className="btn-secondary">
             Về trang chủ
           </Link>
         </div>
 
         <p className="countdown">
-          Tự động chuyển trong <strong>{Math.max(seconds, 0)}s</strong>
+          {canRedirect ? (
+            <>
+              Tự động chuyển trong <strong>{Math.max(seconds, 0)}s</strong>
+            </>
+          ) : (
+            <>Vui lòng cấu hình VITE_LOGIN_URL nếu muốn redirect tự động.</>
+          )}
         </p>
       </div>
     </div>
@@ -114,7 +150,6 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const css = `
-/* ====== Global overflow safety ====== */
 :where(html, body, #root) {
   width: 100%;
   max-width: 100%;
@@ -130,7 +165,6 @@ img, video, canvas, svg {
   height: auto;
 }
 
-/* ====== Typography & layout ====== */
 .title {
   font-size: clamp(18px, 2.2vw, 22px);
   font-weight: 800;
@@ -142,13 +176,11 @@ img, video, canvas, svg {
   font-size: clamp(13px, 1.6vw, 14px);
   opacity: 0.9;
   line-height: 1.55;
-  /* chống tràn ngang khi message dài/không khoảng trắng */
   overflow-wrap: anywhere;
   word-break: break-word;
   hyphens: auto;
 }
 
-/* ====== Spinner with brand logo ====== */
 .spinner-wrap {
   display: flex;
   justify-content: center;
@@ -174,7 +206,6 @@ img, video, canvas, svg {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ====== Progress ====== */
 .progress {
   width: 100%;
   height: 8px;
@@ -197,19 +228,18 @@ img, video, canvas, svg {
   100% { transform: translateX(120%); }
 }
 
-/* ====== Actions (wrap-safe) ====== */
 .actions {
   display: flex;
-  flex-wrap: wrap;           /* cho phép xuống dòng */
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 10px;                 /* khoảng cách đều, không đẩy tràn */
+  gap: 10px;
   margin-bottom: 8px;
   row-gap: 10px;
 }
 .btn-primary, .btn-secondary {
-  max-width: 100%;           /* không vượt khung */
-  white-space: nowrap;       /* nút ngắn gọn, nhưng nếu nhỏ quá sẽ vẫn wrap vì flex-wrap */
+  max-width: 100%;
+  white-space: nowrap;
 }
 .btn-primary {
   border: none;
@@ -243,17 +273,15 @@ img, video, canvas, svg {
   opacity: 0.8;
 }
 
-/* ====== Extra safety for tiny/odd viewports ====== */
 @media (max-width: 340px) {
   .btn-primary, .btn-secondary { padding: 9px 10px; font-size: 12.5px; }
   .progress { height: 7px; }
 }
 @media (max-height: 420px) and (orientation: landscape) {
-  .desc { display: none; }     /* giảm bớt chữ để không vỡ khung */
+  .desc { display: none; }
   .countdown { margin-top: 2px; }
 }
 
-/* ====== Respect reduced motion ====== */
 @media (prefers-reduced-motion: reduce) {
   .spinner, .bar { animation: none !important; }
   .btn-primary, .btn-secondary { transition: none !important; }
