@@ -10,7 +10,7 @@ const RequireLogin: React.FC = () => {
     location.state?.message ||
     "Phiên đăng nhập đã hết hạn. Vui lòng mở lại Mini App từ ứng dụng MB để tiếp tục.";
 
-  // Đọc env (có thể bỏ trống nếu không dùng redirect)
+  // Đọc env (có thể để trống nếu không dùng redirect)
   const rawEnvUrl = (
     (import.meta.env.VITE_LOGIN_URL as string | undefined) ?? ""
   ).trim();
@@ -65,6 +65,7 @@ const RequireLogin: React.FC = () => {
 
   return (
     <div style={styles.wrapper}>
+      {/* Global-safe CSS to prevent overflow */}
       <style>{css}</style>
 
       <div style={styles.card}>
@@ -99,7 +100,6 @@ const RequireLogin: React.FC = () => {
                 : "Chuyển ngay"
               : "Thiếu cấu hình login URL"}
           </button>
-
           <Link to="/" className="btn-secondary">
             Về trang chủ
           </Link>
@@ -165,6 +165,7 @@ img, video, canvas, svg {
   height: auto;
 }
 
+/* ====== Typography & layout ====== */
 .title {
   font-size: clamp(18px, 2.2vw, 22px);
   font-weight: 800;
@@ -181,6 +182,7 @@ img, video, canvas, svg {
   hyphens: auto;
 }
 
+/* ====== Spinner with brand logo ====== */
 .spinner-wrap {
   display: flex;
   justify-content: center;
@@ -206,6 +208,7 @@ img, video, canvas, svg {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ====== Progress ====== */
 .progress {
   width: 100%;
   height: 8px;
@@ -228,6 +231,7 @@ img, video, canvas, svg {
   100% { transform: translateX(120%); }
 }
 
+/* ====== Actions (wrap-safe) ====== */
 .actions {
   display: flex;
   flex-wrap: wrap;

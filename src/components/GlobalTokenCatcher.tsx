@@ -16,16 +16,20 @@ function isAbortError(e: any) {
 // Lấy loginToken từ query hoặc hash
 // Hỗ trợ: ?loginToken=.., #loginToken=.., #/path?loginToken=..
 function extractLoginToken(search: string, hash: string) {
+  // 1. query ?loginToken=...
   const q = new URLSearchParams(search).get("loginToken")?.trim();
   if (q) return q;
 
+  // 2. hash
   const raw = (hash || "").replace(/^#/, "");
   if (!raw) return "";
 
+  // dạng #loginToken=xxx
   if (raw.includes("loginToken=") && !raw.includes("/")) {
     return new URLSearchParams(raw).get("loginToken")?.trim() || "";
   }
 
+  // dạng #mbapp?loginToken=xxx hoặc #/mbapp?loginToken=xxx
   const qm = raw.indexOf("?");
   if (qm >= 0) {
     return (
@@ -33,6 +37,7 @@ function extractLoginToken(search: string, hash: string) {
     );
   }
 
+  // fallback regex
   const m = raw.match(/(?:^|[?&#])loginToken=([^&#]+)/i);
   if (m?.[1]) {
     try {
@@ -79,23 +84,25 @@ const GlobalTokenCatcher: React.FC = () => {
   const navigate = useNavigate();
   const runningRef = React.useRef(false);
 
-  // Nếu muốn chỉ chấp nhận token khi có hash (vd: #mbapp) thì giữ true
-  // Nếu MB không thêm hash mà chỉ gọi ?loginToken=... thì đổi thành false
-  const REQUIRE_HASH = true;
-
   React.useEffect(() => {
     const loginToken = extractLoginToken(location.search, location.hash);
-    const hasHash = !!location.hash && location.hash.length > 1;
     const isResultPage = location.pathname === "/mbapp/result";
 
-    // Có token hợp lệ để verify hay không
-    const hasIncomingToken =
-      !!loginToken && (!REQUIRE_HASH || hasHash || isResultPage);
+    // 🔑 Bắt buộc hash phải chứa 'mbapp' (vd: #mbapp, #/mbapp, #mbapp?loginToken=...)
+    const HASH_KEYWORD = "mbapp";
+    const hasValidHash =
+      !!location.hash && location.hash.toLowerCase().includes(HASH_KEYWORD);
 
-    // Trang kết quả thì bỏ qua verify
+    // Chỉ verify nếu:
+    //  - Có loginToken
+    //  - Và hash hợp lệ (có 'mbapp')
+    //  - Hoặc là trang /mbapp/result (không cần hash)
+    const hasIncomingToken = !!loginToken && (hasValidHash || isResultPage);
+
+    // Trang kết quả bỏ qua verify
     if (isResultPage) return;
 
-    // ✅ Verify duy nhất 1 lần: có token + chưa verified + không chạy rồi
+    // Nếu không có token hợp lệ, hoặc đã verified, hoặc đang chạy → bỏ qua
     if (!hasIncomingToken || isVerified() || runningRef.current) return;
 
     runningRef.current = true;
@@ -103,6 +110,7 @@ const GlobalTokenCatcher: React.FC = () => {
 
     (async () => {
       try {
+        // Nếu API cần thêm hash, có thể truyền location.hash.slice(1)
         const payload = await verifyToken(loginToken, ac.signal);
         const raw: any = (payload as any)?.data ?? payload;
 
@@ -149,9 +157,8 @@ const GlobalTokenCatcher: React.FC = () => {
       }
     })();
 
-    return () => {
-      // Không abort để tránh StrictMode huỷ request đầu
-    };
+    // Không abort để tránh StrictMode hủy request đầu
+    return () => {};
   }, [location, navigate]);
 
   return null;
