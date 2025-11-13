@@ -181,7 +181,7 @@ const Main: React.FC = () => (
     <Routes>
       {/* Các trang KHÔNG cần phiên */}
       <Route path="/require-login" element={<RequireLoginAuto />} />
-      <Route path="/account-payment" element={<AccountPayment />} />
+
       <Route path="/payment" element={<MBOpenPaymentPage />} />
       <Route path="/mbapp/result" element={<ResultPage />} />
       <Route path="/mbapxp/result" element={<ResultPage />} />
@@ -192,6 +192,7 @@ const Main: React.FC = () => (
 
       {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
       <Route element={<VerifiedRoute />}>
+        <Route path="/account-payment" element={<AccountPayment />} />
         <Route path="/work" element={<WorkPage />} />
         <Route path="/contact" element={<ContactPage />} />
       </Route>
