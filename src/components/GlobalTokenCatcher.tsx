@@ -13,31 +13,23 @@ function isAbortError(e: any) {
   );
 }
 
-// Lấy loginToken từ query hoặc hash
-// Hỗ trợ: ?loginToken=.., #loginToken=.., #/path?loginToken=..
+// lấy loginToken từ query hoặc hash (#/path?loginToken=.. | #loginToken=..)
 function extractLoginToken(search: string, hash: string) {
-  // 1. query ?loginToken=...
   const q = new URLSearchParams(search).get("loginToken")?.trim();
   if (q) return q;
 
-  // 2. hash
   const raw = (hash || "").replace(/^#/, "");
   if (!raw) return "";
 
-  // dạng #loginToken=xxx
   if (raw.includes("loginToken=") && !raw.includes("/")) {
     return new URLSearchParams(raw).get("loginToken")?.trim() || "";
   }
-
-  // dạng #mbapp?loginToken=xxx hoặc #/mbapp?loginToken=xxx
   const qm = raw.indexOf("?");
   if (qm >= 0) {
     return (
       new URLSearchParams(raw.slice(qm + 1)).get("loginToken")?.trim() || ""
     );
   }
-
-  // fallback regex
   const m = raw.match(/(?:^|[?&#])loginToken=([^&#]+)/i);
   if (m?.[1]) {
     try {
@@ -49,7 +41,7 @@ function extractLoginToken(search: string, hash: string) {
   return "";
 }
 
-// Xoá riêng loginToken khỏi URL, giữ nguyên path + param khác
+// xóa riêng loginToken khỏi URL, giữ phần còn lại
 function stripLoginToken(loc: ReturnType<typeof useLocation>) {
   const sp = new URLSearchParams(loc.search);
   sp.delete("loginToken");
@@ -71,7 +63,6 @@ function stripLoginToken(loc: ReturnType<typeof useLocation>) {
       }
     }
   }
-
   return {
     pathname: loc.pathname,
     search: sp.toString() ? `?${sp}` : "",
@@ -84,25 +75,21 @@ const GlobalTokenCatcher: React.FC = () => {
   const navigate = useNavigate();
   const runningRef = React.useRef(false);
 
+  // Nếu muốn bắt buộc có hash (ví dụ "#MBAPP"), bật cờ này
+  const REQUIRE_HASH = true;
+
   React.useEffect(() => {
     const loginToken = extractLoginToken(location.search, location.hash);
+    const hasHash = !!location.hash && location.hash.length > 1;
+    // Route /mbapp/result không cần hash
     const isResultPage = location.pathname === "/mbapp/result";
+    const hasIncomingToken =
+      !!loginToken && (!REQUIRE_HASH || hasHash || isResultPage);
 
-    // 🔑 Bắt buộc hash phải chứa 'mbapp' (vd: #mbapp, #/mbapp, #mbapp?loginToken=...)
-    const HASH_KEYWORD = "mbapp";
-    const hasValidHash =
-      !!location.hash && location.hash.toLowerCase().includes(HASH_KEYWORD);
-
-    // Chỉ verify nếu:
-    //  - Có loginToken
-    //  - Và hash hợp lệ (có 'mbapp')
-    //  - Hoặc là trang /mbapp/result (không cần hash)
-    const hasIncomingToken = !!loginToken && (hasValidHash || isResultPage);
-
-    // Trang kết quả bỏ qua verify
+    // Nếu là trang /mbapp/result thì bỏ qua verifyToken
     if (isResultPage) return;
 
-    // Nếu không có token hợp lệ, hoặc đã verified, hoặc đang chạy → bỏ qua
+    // ✅ chỉ verify đúng 1 lần: khi có token + chưa verified + không đang chạy
     if (!hasIncomingToken || isVerified() || runningRef.current) return;
 
     runningRef.current = true;
@@ -110,10 +97,14 @@ const GlobalTokenCatcher: React.FC = () => {
 
     (async () => {
       try {
-        // Nếu API cần thêm hash, có thể truyền location.hash.slice(1)
-        const payload = await verifyToken(loginToken, ac.signal);
+        // nếu verifyToken bên bạn nhận thêm hash, truyền: location.hash.slice(1)
+        const payload = await verifyToken(
+          loginToken,
+          ac.signal /* , location.hash.slice(1) */
+        );
         const raw: any = (payload as any)?.data ?? payload;
 
+        // chuẩn hoá lấy sessionId/cif/fullname ở các vị trí hay gặp
         const sessionId: string =
           raw?.sessionId ?? raw?.token ?? raw?.accessToken ?? "";
 
@@ -130,7 +121,7 @@ const GlobalTokenCatcher: React.FC = () => {
         if (!sessionId)
           throw new Error("Không tìm thấy sessionId/token trong response");
 
-        // ⛳ Lưu session vào sessionStorage
+        // ⛳ LƯU VÀO sessionStorage (không localStorage)
         setSession({
           sessionId,
           cif: cif ?? null,
@@ -138,7 +129,7 @@ const GlobalTokenCatcher: React.FC = () => {
           raw,
         });
 
-        // Xoá loginToken khỏi URL để không verify lại
+        // xoá loginToken khỏi URL để không verify lại ở lần render sau
         navigate(stripLoginToken(location), { replace: true });
       } catch (e) {
         if (isAbortError(e)) return;
@@ -148,7 +139,7 @@ const GlobalTokenCatcher: React.FC = () => {
             replace: true,
             state: {
               message:
-                "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng mở lại Mini App từ ứng dụng MB.",
+                "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
             },
           });
         }
@@ -157,7 +148,7 @@ const GlobalTokenCatcher: React.FC = () => {
       }
     })();
 
-    // Không abort để tránh StrictMode hủy request đầu
+    // không abort trong cleanup để tránh StrictMode hủy request đầu
     return () => {};
   }, [location, navigate]);
 
