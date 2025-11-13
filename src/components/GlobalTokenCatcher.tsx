@@ -1,4 +1,3 @@
-// src/components/GlobalTokenCatcher.tsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { verifyToken } from "../data/api/api_verify_token";
@@ -13,7 +12,7 @@ function isAbortError(e: any) {
   );
 }
 
-// lấy loginToken từ query hoặc hash (#/path?loginToken=.. | #loginToken=..)
+// Lấy loginToken từ query hoặc hash (#/path?loginToken=.. | #loginToken=..)
 function extractLoginToken(search: string, hash: string) {
   const q = new URLSearchParams(search).get("loginToken")?.trim();
   if (q) return q;
@@ -41,7 +40,7 @@ function extractLoginToken(search: string, hash: string) {
   return "";
 }
 
-// xóa riêng loginToken khỏi URL, giữ phần còn lại
+// Xóa riêng loginToken khỏi URL, giữ phần còn lại
 function stripLoginToken(loc: ReturnType<typeof useLocation>) {
   const sp = new URLSearchParams(loc.search);
   sp.delete("loginToken");
@@ -75,21 +74,23 @@ const GlobalTokenCatcher: React.FC = () => {
   const navigate = useNavigate();
   const runningRef = React.useRef(false);
 
-  // Nếu muốn bắt buộc có hash (ví dụ "#MBAPP"), bật cờ này
+  // Bắt buộc phải có hash (#mbapp) khi nhận loginToken từ MB App
   const REQUIRE_HASH = true;
 
   React.useEffect(() => {
     const loginToken = extractLoginToken(location.search, location.hash);
     const hasHash = !!location.hash && location.hash.length > 1;
+
     // Route /mbapp/result không cần hash
     const isResultPage = location.pathname === "/mbapp/result";
+
     const hasIncomingToken =
       !!loginToken && (!REQUIRE_HASH || hasHash || isResultPage);
 
     // Nếu là trang /mbapp/result thì bỏ qua verifyToken
     if (isResultPage) return;
 
-    // ✅ chỉ verify đúng 1 lần: khi có token + chưa verified + không đang chạy
+    // ✅ Chỉ verify 1 lần khi: có token + chưa verified + không đang chạy
     if (!hasIncomingToken || isVerified() || runningRef.current) return;
 
     runningRef.current = true;
@@ -97,14 +98,13 @@ const GlobalTokenCatcher: React.FC = () => {
 
     (async () => {
       try {
-        // nếu verifyToken bên bạn nhận thêm hash, truyền: location.hash.slice(1)
         const payload = await verifyToken(
           loginToken,
-          ac.signal /* , location.hash.slice(1) */
+          ac.signal /* , location.hash.slice(1) nếu backend cần */
         );
         const raw: any = (payload as any)?.data ?? payload;
 
-        // chuẩn hoá lấy sessionId/cif/fullname ở các vị trí hay gặp
+        // Chuẩn hoá lấy sessionId/cif/fullname
         const sessionId: string =
           raw?.sessionId ?? raw?.token ?? raw?.accessToken ?? "";
 
@@ -121,7 +121,7 @@ const GlobalTokenCatcher: React.FC = () => {
         if (!sessionId)
           throw new Error("Không tìm thấy sessionId/token trong response");
 
-        // ⛳ LƯU VÀO sessionStorage (không localStorage)
+        // ⛳ LƯU VÀO sessionStorage (không dùng localStorage)
         setSession({
           sessionId,
           cif: cif ?? null,
@@ -129,26 +129,23 @@ const GlobalTokenCatcher: React.FC = () => {
           raw,
         });
 
-        // xoá loginToken khỏi URL để không verify lại ở lần render sau
+        // Xoá loginToken khỏi URL để không verify lại ở lần render sau
         navigate(stripLoginToken(location), { replace: true });
       } catch (e) {
         if (isAbortError(e)) return;
+
+        // Nếu verify fail: xoá session, log lỗi, nhưng KHÔNG đá sang /require-login
         clearSession();
-        if (!isResultPage) {
-          navigate("/require-login", {
-            replace: true,
-            state: {
-              message:
-                "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
-            },
-          });
-        }
+        console.error("verifyToken thất bại:", e);
+
+        // Vẫn xoá loginToken khỏi URL để không loop verify
+        navigate(stripLoginToken(location), { replace: true });
       } finally {
         runningRef.current = false;
       }
     })();
 
-    // không abort trong cleanup để tránh StrictMode hủy request đầu
+    // Không abort trong cleanup để tránh StrictMode hủy request đầu
     return () => {};
   }, [location, navigate]);
 

@@ -9,17 +9,17 @@ const RequireLogin: React.FC = () => {
     location.state?.message ||
     "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.";
 
+  // Lấy URL login từ ENV, chống placeholder <login-url> & validate URL
   const loginUrl = useMemo(() => {
     const raw = (import.meta.env.VITE_LOGIN_URL as string | undefined)?.trim();
 
-    // Không redirect nếu để placeholder hoặc không cấu hình
+    // Không redirect nếu không cấu hình / để placeholder
     if (!raw || raw === "#" || raw.includes("<login-url>")) {
       console.warn("⚠️ LOGIN_URL chưa cấu hình đúng:", raw);
       return "";
     }
 
     try {
-      // Validate cho chắc chắn URL hợp lệ
       const u = new URL(raw);
       return u.toString();
     } catch {
@@ -32,6 +32,9 @@ const RequireLogin: React.FC = () => {
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
+    // Nếu không có loginUrl thì không tự đếm ngược redirect
+    if (!loginUrl) return;
+
     const timer = setInterval(() => {
       setSeconds((s) => {
         if (s <= 1) {
@@ -43,12 +46,12 @@ const RequireLogin: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loginUrl]);
 
   const handleRedirect = () => {
-    if (redirecting) return;
+    if (redirecting || !loginUrl) return;
     setRedirecting(true);
-    if (loginUrl && loginUrl !== "#") window.location.assign(loginUrl);
+    window.location.assign(loginUrl);
   };
 
   return (
@@ -79,19 +82,29 @@ const RequireLogin: React.FC = () => {
         <div className="actions">
           <button
             onClick={handleRedirect}
-            disabled={redirecting}
+            disabled={redirecting || !loginUrl}
             className="btn-primary"
           >
-            {redirecting ? "Đang chuyển..." : "Chuyển ngay"}
+            {redirecting
+              ? "Đang chuyển..."
+              : loginUrl
+              ? "Chuyển ngay"
+              : "Liên hệ hỗ trợ"}
           </button>
           <Link to="/" className="btn-secondary">
             Về trang chủ
           </Link>
         </div>
 
-        <p className="countdown">
-          Tự động chuyển trong <strong>{Math.max(seconds, 0)}s</strong>
-        </p>
+        {loginUrl ? (
+          <p className="countdown">
+            Tự động chuyển trong <strong>{Math.max(seconds, 0)}s</strong>
+          </p>
+        ) : (
+          <p className="countdown">
+            Không tìm thấy địa chỉ đăng nhập. Vui lòng liên hệ hỗ trợ.
+          </p>
+        )}
       </div>
     </div>
   );
