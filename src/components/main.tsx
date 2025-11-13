@@ -175,7 +175,7 @@ const RequireLoginAuto: React.FC = () => {
 
 const Main: React.FC = () => (
   <Router>
-    {/* ✅ VERIFY 1 LẦN Ở ĐÂY */}
+    {/* VERIFY 1 LẦN Ở ĐÂY */}
     <GlobalTokenCatcher />
 
     <Routes>
@@ -187,9 +187,11 @@ const Main: React.FC = () => (
       <Route path="/mbapxp/result" element={<ResultPage />} />
       <Route path="/instruction" element={<InstructionPage />} />
 
+      {/* Trang home: LUÔN cho vào được, không cần verify */}
+      <Route path="/" element={<Home />} />
+
       {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
       <Route element={<VerifiedRoute />}>
-        <Route path="/" element={<Home />} />
         <Route path="/work" element={<WorkPage />} />
         <Route path="/contact" element={<ContactPage />} />
       </Route>
