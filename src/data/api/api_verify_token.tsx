@@ -1,3 +1,4 @@
+// src/data/api/api_verify_token.ts
 import axios from "axios";
 
 export type SessionInfo = {
@@ -25,42 +26,74 @@ function tryParseJSON<T = any>(x: unknown): T | null {
   }
 }
 
-function normalizeSession(raw: any): SessionInfo | null {
-  if (!raw) return null;
+// Helper pick field với nhiều biến thể tên
+function pickSessionId(obj: any): string | null {
+  const v =
+    obj?.sessionId ??
+    obj?.sessionID ??
+    obj?.session_id ??
+    obj?.accessToken ??
+    obj?.token;
+  return v ? String(v) : null;
+}
 
-  const maybeObj = tryParseJSON(raw);
+function pickCif(obj: any): string | null {
+  const v =
+    obj?.cif ??
+    obj?.cifNo ??
+    obj?.cifno ??
+    obj?.customerId ??
+    obj?.customerID ??
+    obj?.custId;
+  return v ? String(v) : null;
+}
+
+function pickFullname(obj: any): string | null {
+  const v =
+    obj?.fullname ??
+    obj?.fullName ??
+    obj?.full_name ??
+    obj?.custName ??
+    obj?.customerName;
+  return v ? String(v) : null;
+}
+
+// Chuẩn hoá mọi biến thể payload có thể gặp
+function normalizeSession(rawInput: any): SessionInfo | null {
+  if (!rawInput) return null;
+
+  let raw = rawInput;
+  const maybeObj = tryParseJSON(rawInput);
   if (maybeObj) raw = maybeObj;
 
-  if (raw.sessionId && raw.cif && raw.fullname) {
-    return {
-      sessionId: String(raw.sessionId),
-      cif: String(raw.cif),
-      fullname: String(raw.fullname),
-      fullnameVn: raw.fullnameVn ?? null,
-      idCardType: raw.idCardType ?? null,
-      ...raw,
-    };
+  const candidates = [raw, raw?.data, raw?.profile];
+
+  for (const c of candidates) {
+    if (!c || typeof c !== "object") continue;
+
+    const sessionId = pickSessionId(c);
+    const cif = pickCif(c);
+    const fullname = pickFullname(c);
+
+    if (sessionId && cif && fullname) {
+      return {
+        sessionId,
+        cif,
+        fullname,
+        fullnameVn: c.fullnameVn ?? c.fullNameVn ?? null,
+        idCardType: c.idCardType ?? c.idcardType ?? null,
+        ...c,
+      };
+    }
   }
 
-  if (raw.data && raw.data.sessionId && raw.data.cif && raw.data.fullname) {
-    const d = raw.data;
+  // Fallback: chấp nhận có sessionId, còn cif/fullname để BE return sau
+  const sessionId = pickSessionId(raw) || pickSessionId(raw?.data);
+  if (sessionId) {
     return {
-      sessionId: String(d.sessionId),
-      cif: String(d.cif),
-      fullname: String(d.fullname),
-      fullnameVn: d.fullnameVn ?? null,
-      idCardType: d.idCardType ?? null,
-      ...d,
-    };
-  }
-
-  if (raw.token && raw.profile?.cif && raw.profile?.fullname) {
-    return {
-      sessionId: String(raw.token),
-      cif: String(raw.profile.cif),
-      fullname: String(raw.profile.fullname),
-      fullnameVn: raw.profile.fullnameVn ?? null,
-      idCardType: raw.profile.idCardType ?? null,
+      sessionId,
+      cif: pickCif(raw) || pickCif(raw?.data) || "",
+      fullname: pickFullname(raw) || pickFullname(raw?.data) || "",
       ...raw,
     };
   }
@@ -74,9 +107,24 @@ export async function verifyToken(
 ): Promise<SessionInfo> {
   console.log("[verifyToken] MODE=PROD");
 
-  const field = (import.meta.env.VITE_MB_TOKEN_FIELD as string) || "token";
+  /**
+   * Gửi token lên BE:
+   *  - Nếu có cấu hình VITE_MB_TOKEN_FIELD thì dùng field đó
+   *  - Đồng thời gửi luôn cả "loginToken" và "token" để BE linh hoạt
+   */
   const fd = new FormData();
-  fd.append(field, loginToken);
+
+  const fieldEnv = (
+    import.meta.env.VITE_MB_TOKEN_FIELD as string | undefined
+  )?.trim();
+
+  if (fieldEnv) {
+    fd.append(fieldEnv, loginToken);
+  }
+
+  // luôn gửi thêm 2 field phổ biến
+  fd.append("loginToken", loginToken);
+  fd.append("token", loginToken);
 
   const url = buildEndpoint("/api/v1/mb/verify-token");
   const res = await axios.post(url, fd, {
@@ -87,6 +135,7 @@ export async function verifyToken(
 
   const data = res.data;
 
+  // nếu BE dùng format { success, message, data }
   if (data && data.success === false) {
     throw new Error(data.message || "Verify failed");
   }
