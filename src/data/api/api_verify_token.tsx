@@ -1,4 +1,3 @@
-// api_verify_token.tsx
 import axios from "axios";
 
 export type SessionInfo = {
@@ -7,7 +6,6 @@ export type SessionInfo = {
   fullname: string;
   fullnameVn?: string | null;
   idCardType?: string | null;
-  // mở rộng thêm field BE có thể trả
   [k: string]: any;
 };
 
@@ -18,7 +16,6 @@ function buildEndpoint(path: string) {
   return base ? `${base}${path}` : path;
 }
 
-// thủ thuật nhỏ: thử parse nếu BE trả string JSON
 function tryParseJSON<T = any>(x: unknown): T | null {
   if (typeof x !== "string") return null;
   try {
@@ -28,15 +25,12 @@ function tryParseJSON<T = any>(x: unknown): T | null {
   }
 }
 
-// Chuẩn hoá mọi biến thể payload có thể gặp
 function normalizeSession(raw: any): SessionInfo | null {
   if (!raw) return null;
 
-  // Nếu response là string JSON -> parse rồi đi tiếp
   const maybeObj = tryParseJSON(raw);
   if (maybeObj) raw = maybeObj;
 
-  // Case 1: BE trả thẳng
   if (raw.sessionId && raw.cif && raw.fullname) {
     return {
       sessionId: String(raw.sessionId),
@@ -48,7 +42,6 @@ function normalizeSession(raw: any): SessionInfo | null {
     };
   }
 
-  // Case 2: bọc trong data
   if (raw.data && raw.data.sessionId && raw.data.cif && raw.data.fullname) {
     const d = raw.data;
     return {
@@ -61,7 +54,6 @@ function normalizeSession(raw: any): SessionInfo | null {
     };
   }
 
-  // (Optional) Case 3: fallback cũ nếu từng dùng token/profile
   if (raw.token && raw.profile?.cif && raw.profile?.fullname) {
     return {
       sessionId: String(raw.token),
@@ -82,7 +74,6 @@ export async function verifyToken(
 ): Promise<SessionInfo> {
   console.log("[verifyToken] MODE=PROD");
 
-  // Đây chỉ là tên field FE gửi lên BE (không liên quan tới token trong response)
   const field = (import.meta.env.VITE_MB_TOKEN_FIELD as string) || "token";
   const fd = new FormData();
   fd.append(field, loginToken);
@@ -94,12 +85,8 @@ export async function verifyToken(
     headers: { Accept: "application/json" },
   });
 
-  console.log("[verify-token] status =", res.status);
-  console.log("[verify-token] raw =", res.data, "typeof:", typeof res.data);
-
   const data = res.data;
 
-  // BE có thể báo lỗi chuẩn
   if (data && data.success === false) {
     throw new Error(data.message || "Verify failed");
   }
