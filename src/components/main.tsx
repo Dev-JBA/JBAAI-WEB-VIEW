@@ -26,93 +26,24 @@ import InstructionPage from "../Pages/instructionPage/instruction";
 
 (window as any).openMBPaymentScreen = openMBPaymentScreen;
 
-const SHOW_TOKEN_PANEL = true;
+const SHOW_TOKEN_PANEL = true; // tắt khi lên prod nếu cần
 
-// ======================================================================
-// DEBUG BANNER — HIỂN THỊ URL, PATH, SEARCH, HASH TRONG WEBVIEW MB APP
-// ======================================================================
-const DebugBanner: React.FC = () => {
-  const enabled =
-    (import.meta.env.VITE_SHOW_DEBUG_URL as string | undefined) === "1";
-
-  if (!enabled) return null;
-
-  const href = typeof window !== "undefined" ? window.location.href : "";
-  const location = useLocation();
-
-  const debugText = JSON.stringify(
-    {
-      href,
-      pathname: location.pathname,
-      search: location.search,
-      hash: location.hash,
-    },
-    null,
-    2
-  );
-
-  const handleCopy = async () => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(debugText);
-        alert("Đã copy debug info:\n" + debugText);
-      } else {
-        alert(debugText);
-      }
-    } catch {
-      alert(debugText);
-    }
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 999999,
-        background: "rgba(0,0,0,0.85)",
-        color: "#fff",
-        padding: "8px",
-        fontSize: 10,
-        lineHeight: "14px",
-      }}
-    >
-      <div style={{ maxHeight: 60, overflow: "auto", whiteSpace: "pre-wrap" }}>
-        {debugText}
-      </div>
-      <button
-        onClick={handleCopy}
-        style={{
-          marginTop: 4,
-          padding: "3px 6px",
-          fontSize: 10,
-          borderRadius: 4,
-          background: "#22c55e",
-          color: "#fff",
-          border: "none",
-        }}
-      >
-        Copy
-      </button>
-    </div>
-  );
-};
-// ======================================================================
-
-// =========================== HOME ============================
+// Home có panel hiển thị JSON token+hash
 const Home: React.FC = () => {
   const { search, hash } = useLocation();
 
+  // Lấy loginToken + hash (bỏ #)
   const { loginToken, hasToken, hasHash, cleanHash } = useMemo(() => {
     const params = new URLSearchParams(search);
     const token = (params.get("loginToken") || "").trim();
+    const tokenExists = token.length > 0;
+    const hasHashFlag = !!hash && hash.length > 1; // "#MBAPP" -> true
+    const normalizedHash = hash && hash.length > 1 ? hash.slice(1) : "";
     return {
       loginToken: token,
-      hasToken: token.length > 0,
-      hasHash: !!hash && hash.length > 1,
-      cleanHash: hash && hash.length > 1 ? hash.slice(1) : "",
+      hasToken: tokenExists,
+      hasHash: hasHashFlag,
+      cleanHash: normalizedHash,
     };
   }, [search, hash]);
 
@@ -121,23 +52,29 @@ const Home: React.FC = () => {
     [loginToken, cleanHash]
   );
 
+  // Log ra console khi CÓ token
   useEffect(() => {
-    if (hasToken) console.log(jsonPayload);
+    if (hasToken) {
+      // eslint-disable-next-line no-console
+      console.log(jsonPayload);
+    }
   }, [hasToken, jsonPayload]);
 
+  // Nếu KHÔNG có token mà CÓ hash → đóng webview
   useEffect(() => {
     if (!hasToken && hasHash) {
       try {
         const w = window as any;
-        if (w?.ReactNaiveWebView?.postMessage) {
+        if (w && typeof w.ReactNaiveWebView?.postMessage === "function") {
           w.ReactNaiveWebView.postMessage(JSON.stringify({ type: "GO_BACK" }));
         }
       } catch {}
     }
   }, [hasToken, hasHash]);
 
+  // Copy JSON
   const [copied, setCopied] = useState(false);
-  const copyJson = async () => {
+  const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(jsonPayload);
       setCopied(true);
@@ -149,6 +86,7 @@ const Home: React.FC = () => {
     <div>
       <Navbar />
 
+      {/* Panel hiển thị JSON khi có token */}
       {hasToken && SHOW_TOKEN_PANEL && (
         <div
           style={{
@@ -156,34 +94,44 @@ const Home: React.FC = () => {
             top: 0,
             zIndex: 999,
             background: "#0f172a",
-            color: "white",
+            color: "#fff",
             padding: "12px 12px 0",
             borderBottom: "1px solid #1f2937",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
             <strong>loginToken payload</strong>
             <button
-              onClick={copyJson}
+              onClick={onCopy}
               style={{
                 padding: "4px 8px",
                 borderRadius: 6,
-                color: "white",
                 border: "1px solid #334155",
                 background: "transparent",
+                color: "#fff",
+                cursor: "pointer",
               }}
+              title="Copy JSON"
             >
               {copied ? "✓ Copied" : "Copy JSON"}
             </button>
 
+            {/* Giữ nguyên query & hash khi sang /mbapp/result */}
             <Link
               to={{ pathname: "/mbapp/result", search, hash }}
-              style={{ color: "#93c5fd", marginLeft: "auto" }}
+              style={{ marginLeft: "auto", color: "#93c5fd" }}
             >
               Tới trang kết quả
             </Link>
           </div>
-
+          s
           <pre
             style={{
               whiteSpace: "pre-wrap",
@@ -193,6 +141,7 @@ const Home: React.FC = () => {
               borderRadius: 8,
               fontSize: 12,
               lineHeight: 1.4,
+              border: "1px solid #1f2937",
             }}
           >
             {jsonPayload}
@@ -208,42 +157,39 @@ const Home: React.FC = () => {
   );
 };
 
-// =========================== REQUIRE LOGIN ============================
+// /require-login: khi verify xong thì tự quay về “next” (nếu có)
 const RequireLoginAuto: React.FC = () => {
   const nav = useNavigate();
   const loc = useLocation();
-  useEffect(() => {
+  React.useEffect(() => {
     const goNext = () => {
       const next = (loc.state as any)?.next || "/";
       nav(next, { replace: true });
     };
     if (isVerified() && getSession()?.sessionId) goNext();
-
-    const handler = () => goNext();
-    window.addEventListener("mb:verified", handler);
-    return () => window.removeEventListener("mb:verified", handler);
+    const onVerified = () => goNext();
+    window.addEventListener("mb:verified", onVerified);
+    return () => window.removeEventListener("mb:verified", onVerified);
   }, [nav, loc.state]);
-
   return <RequireLogin />;
 };
 
-// =========================== ROUTER MAIN ============================
 const Main: React.FC = () => (
   <Router>
-    {/* DEBUG WEBVIEW URL */}
-    <DebugBanner />
-
+    {/* ✅ VERIFY 1 LẦN Ở ĐÂY */}
     <GlobalTokenCatcher />
 
     <Routes>
+      {/* Các trang KHÔNG cần phiên */}
       <Route path="/require-login" element={<RequireLoginAuto />} />
       <Route path="/account-payment" element={<AccountPayment />} />
       <Route path="/payment" element={<MBOpenPaymentPage />} />
       <Route path="/mbapp/result" element={<ResultPage />} />
       <Route path="/mbapxp/result" element={<ResultPage />} />
       <Route path="/instruction" element={<InstructionPage />} />
+      <Route path="/" element={<Home />} />
 
-      {/* Protected pages */}
+      {/* Các trang CẦN phiên MB → bọc dưới VerifiedRoute */}
       <Route element={<VerifiedRoute />}>
         <Route path="/" element={<Home />} />
         <Route path="/work" element={<WorkPage />} />

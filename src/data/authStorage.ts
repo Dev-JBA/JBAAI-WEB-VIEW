@@ -29,7 +29,7 @@ export function isVerified(): boolean {
   try {
     return sessionStorage.getItem(VERIFIED_KEY) === "1";
   } catch {
-    return false;
+    return false;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
   }
 }
 
